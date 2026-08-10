@@ -97,6 +97,15 @@ missing Prisma client (`packages/db/generated/` is git-ignored). Only the root T
 `dependsOn: ["^generate"]`. Both projects also need **Include source files outside of the Root
 Directory** enabled.
 
+**Prisma query engine.** Each app's `build` script runs `scripts/copy-prisma-engine.mjs` before
+`next build`. The generated client lives at a custom `output` path, so it is bundled rather than
+externalised, and Next's file tracing cannot follow the `.node` binary the bundle loads at runtime —
+the deployed function would fail with _"could not locate the Query Engine for runtime
+rhel-openssl-3.0.x"_. The script copies the engine to `apps/<app>/generated/client`, which is the
+first directory Prisma searches at runtime, and `outputFileTracingIncludes` in each `next.config.ts`
+puts it in the deployment bundle. `schema.prisma` lists `rhel-openssl-3.0.x` explicitly in
+`binaryTargets` so this works regardless of which OS ran `prisma generate`.
+
 `admin-web` sends `robots: noindex`; consider putting it behind Vercel Authentication or an IP
 allow-list as well.
 

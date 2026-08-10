@@ -11,6 +11,8 @@ dist/
 
 # prisma generated client
 packages/db/generated/
+# copies of the query engine, placed next to each app at build time
+apps/*/generated/
 
 # env
 .env

@@ -89,7 +89,7 @@ Vercel Upstash integration injects, and `getRedis()` accepts either pair.
 
 Root Directory `apps/app-web`, install `pnpm install --frozen-lockfile`, build
 `cd ../.. && pnpm turbo run build --filter=app-web` — the build must run from the repo root so
-Turborepo generates the Prisma client first. Deployments are triggered by Vercel's Git integration.
+Turborepo generates the Prisma client first. The `build` script also copies the Prisma query engine next to the app (`scripts/copy-prisma-engine.mjs`); see the root README for why. Deployments are triggered by Vercel's Git integration.
 
 Do **not** add a `prisma migrate` step here — migrations run from `packages/db` in the `migrate` job
 of `.github/workflows/ci.yml`.

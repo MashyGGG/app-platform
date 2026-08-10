@@ -16,6 +16,13 @@ const nextConfig: NextConfig = {
   // Native / engine-backed modules must stay outside the bundle.
   serverExternalPackages: ['@prisma/client', '@node-rs/argon2'],
   outputFileTracingRoot: path.resolve(process.cwd(), '../../'),
+  // The Prisma query engine is a `.node` binary loaded at runtime by a bundled
+  // module, so tracing cannot discover it by following imports. `pnpm build`
+  // copies it here first (scripts/copy-prisma-engine.mjs); this line is what
+  // actually gets it into the deployed function.
+  outputFileTracingIncludes: {
+    '/**/*': ['./generated/client/**/*'],
+  },
   eslint: {
     // Linting is a dedicated root-level CI step (`pnpm lint`).
     ignoreDuringBuilds: true,

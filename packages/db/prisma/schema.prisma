@@ -7,6 +7,12 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/client"
+  // `rhel-openssl-3.0.x` is the Vercel/AWS Lambda runtime. Listing it explicitly
+  // rather than relying on `native` means the deployed engine does not depend on
+  // which machine ran `prisma generate` — a Windows or macOS build produces a
+  // deployable artifact too. scripts/copy-prisma-engine.mjs then places these
+  // next to the app bundle; see that file for why they cannot stay here.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
