@@ -1,0 +1,26 @@
+# Host-built artefacts must never leak into the Linux image: node_modules and
+# packages/db/generated hold Windows/macOS binaries that would silently shadow
+# the Linux ones installed inside the container.
+node_modules
+**/node_modules
+packages/db/generated
+apps/*/generated
+.next
+**/.next
+dist
+**/dist
+.turbo
+**/.turbo
+*.tsbuildinfo
+
+# Credentials stay out of the image; they are supplied at runtime via env_file.
+.env
+.env.*
+!.env.example
+
+.git
+.github
+.husky
+.vercel
+coverage
+*.log

@@ -1,0 +1,35 @@
+# Runs both apps locally against the REAL Vercel-side services (Neon Postgres,
+# Upstash Redis). No local database is started — that is docker-compose.yml.
+#
+#   cp .env.remote.example .env.remote     # then fill it, see the file's header
+#   docker compose -f docker-compose.remote.yml up -d --build
+#
+#   app-web    http://localhost:3000
+#   admin-web  http://localhost:3001
+#
+# ⚠  Everything you do here writes to PRODUCTION data. Registering a user,
+#    disabling an account or hitting a rate limit is real and permanent.
+services:
+  app-web:
+    image: app-platform-local:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: pnpm --filter app-web run start
+    env_file:
+      - .env.remote
+    ports:
+      - '3000:3000'
+
+  admin-web:
+    # Same image as above — one build serves both. The second `build:` block is
+    # a cache hit, not a second compilation.
+    image: app-platform-local:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: pnpm --filter admin-web run start
+    env_file:
+      - .env.remote
+    ports:
+      - '3001:3001'

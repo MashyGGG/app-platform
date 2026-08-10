@@ -18,6 +18,7 @@ apps/*/generated/
 .env
 .env.*
 !.env.example
+!.env.remote.example
 
 # vercel
 .vercel/
@@ -37,5 +38,6 @@ Thumbs.db
 # coverage
 coverage/
 
-.vercel
-.env*
+# NOTE: `.vercel` and `.env*` were appended here by the Vercel CLI. Both are
+# already covered above, and the bare `.env*` silently cancelled the
+# `!.env.example` exception — the last matching pattern wins in .gitignore.
