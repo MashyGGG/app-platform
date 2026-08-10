@@ -67,9 +67,10 @@ failing — a cache outage must not take the console down.
 ```
 DATABASE_URL, DIRECT_URL
 AUTH_SECRET_ADMIN                     # must differ from AUTH_SECRET_APP
-UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
-NEXT_PUBLIC_ADMIN_URL
+UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN   # or KV_REST_API_URL / KV_REST_API_TOKEN
 ```
+
+`NEXT_PUBLIC_ADMIN_URL` is reserved — no code reads it yet, so there is nothing to set.
 
 Session lifetime is 8 hours here (vs 7 days in app-web).
 

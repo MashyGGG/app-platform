@@ -79,8 +79,11 @@ DATABASE_URL, DIRECT_URL
 AUTH_SECRET_APP                       # must differ from AUTH_SECRET_ADMIN
 UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 RESEND_API_KEY, EMAIL_FROM            # optional; empty ⇒ reset links printed to the console
-NEXT_PUBLIC_APP_URL
+NEXT_PUBLIC_APP_URL                   # base of the password-reset link
 ```
+
+`UPSTASH_REDIS_REST_*` may also arrive as `KV_REST_API_URL` / `KV_REST_API_TOKEN` — that is what the
+Vercel Upstash integration injects, and `getRedis()` accepts either pair.
 
 ## Vercel
 
