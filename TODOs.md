@@ -1,3 +1,4 @@
 - [x] 移除 Google OAuth，仅支持邮箱密码
-- [] generate Claude.md file, and ignore this file
+- [x] generate Claude.md file, and ignore this file
+- [] 管理后台支持CRUD APP用户
 - [] 稿子管理，支持 Markdown 格式，支持调用 AI 辅助完成
