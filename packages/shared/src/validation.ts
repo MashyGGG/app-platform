@@ -50,6 +50,21 @@ export type AdminRoleName = z.infer<typeof adminRoleSchema>
 export const userStatusSchema = z.enum(['active', 'disabled'])
 export type UserStatusName = z.infer<typeof userStatusSchema>
 
+/**
+ * Admin: create an APP user from the console.
+ *
+ * Same shape as `registerSchema` minus the self-service parts: the admin picks
+ * the initial password, so `passwordSchema` is reused rather than relaxed — a
+ * console-created account must not be weaker than a self-registered one.
+ */
+export const appUserCreateSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+  name: z.string().trim().min(1).max(80).optional(),
+  locale: localeSchema.optional(),
+})
+export type AppUserCreateInput = z.infer<typeof appUserCreateSchema>
+
 /** Admin: edit an APP user's basic info (SPEC §1.7 — operator may do this). */
 export const appUserUpdateSchema = z.object({
   userId: z.string().min(1),

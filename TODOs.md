@@ -1,4 +1,6 @@
 - [x] 移除 Google OAuth，仅支持邮箱密码
 - [x] generate Claude.md file, and ignore this file
-- [] 管理后台支持CRUD APP用户
+- [x] 管理后台支持CRUD APP用户（删除按产品决策落为停用/启用，不做硬删除）
+- [] 支持单独发布 admin-web/app-web，设置不同版本号
+- [] 端到端验证如何做？是否需要引入第三方依赖库？
 - [] 稿子管理，支持 Markdown 格式，支持调用 AI 辅助完成

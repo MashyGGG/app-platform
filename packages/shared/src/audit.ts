@@ -4,6 +4,7 @@
  * together (a migration is required, which is the point).
  */
 export const AUDIT_ACTIONS = [
+  'APP_USER_CREATE',
   'APP_USER_UPDATE',
   'APP_USER_DISABLE',
   'APP_USER_ENABLE',

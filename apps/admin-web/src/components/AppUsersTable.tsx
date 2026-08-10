@@ -1,6 +1,6 @@
 'use client'
 
-import { EditOutlined, ReloadOutlined } from '@ant-design/icons'
+import { EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
   App,
   Button,
@@ -32,6 +32,13 @@ interface EditValues {
   locale?: 'zh' | 'en'
 }
 
+interface CreateValues {
+  email: string
+  password: string
+  name?: string
+  locale?: 'zh' | 'en'
+}
+
 export function AppUsersTable() {
   const t = useTranslations()
   const format = useFormatter()
@@ -44,7 +51,11 @@ export function AppUsersTable() {
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState<AppUser | null>(null)
+  const [creating, setCreating] = useState(false)
   const [form] = Form.useForm<EditValues>()
+  // A separate instance: sharing one with the edit modal would leak the edited
+  // user's values into a subsequent create.
+  const [createForm] = Form.useForm<CreateValues>()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -79,6 +90,24 @@ export function AppUsersTable() {
     void load()
   }
 
+  async function submitCreate(values: CreateValues) {
+    const result = await postJson<{ ok: true }>('/api/app-users/create', values)
+    if (!result.ok) {
+      message.error(t(result.failure.messageKey))
+      return
+    }
+    message.success(t('appUsers.created'))
+    setCreating(false)
+    createForm.resetFields()
+
+    // A new user sorts to the top of `createdAt desc`, so it is only visible
+    // from page 1. Jumping there re-runs `load` through its effect; calling
+    // load() as well would fire a second request still closed over the old
+    // page, which can land last and repaint the table with stale rows.
+    if (page === 1) void load()
+    else setPage(1)
+  }
+
   async function submitEdit(values: EditValues) {
     if (!editing) return
     const result = await postJson<{ ok: true }>('/api/app-users/update', {
@@ -109,6 +138,9 @@ export function AppUsersTable() {
         />
         <Button icon={<ReloadOutlined />} onClick={() => void load()}>
           {t('common.refresh')}
+        </Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreating(true)}>
+          {t('appUsers.create')}
         </Button>
       </Space>
 
@@ -184,6 +216,57 @@ export function AppUsersTable() {
           },
         ]}
       />
+
+      <Modal
+        open={creating}
+        title={t('appUsers.createTitle')}
+        okText={t('common.confirm')}
+        cancelText={t('common.cancel')}
+        onCancel={() => setCreating(false)}
+        onOk={() => createForm.submit()}
+        destroyOnClose
+      >
+        <Form<CreateValues>
+          form={createForm}
+          layout="vertical"
+          initialValues={{ locale: 'zh' }}
+          onFinish={submitCreate}
+        >
+          <Form.Item
+            name="email"
+            label={t('common.email')}
+            rules={[{ required: true }, { type: 'email', message: t('errors.invalidEmail') }]}
+          >
+            <Input autoComplete="off" />
+          </Form.Item>
+          <Form.Item name="name" label={t('common.name')}>
+            <Input maxLength={80} />
+          </Form.Item>
+          {/* Mirrors passwordSchema in @app/shared. The server re-validates —
+              this only saves a round trip. */}
+          <Form.Item
+            name="password"
+            label={t('appUsers.password')}
+            extra={t('appUsers.passwordHint')}
+            rules={[
+              { required: true },
+              { min: 8, message: t('errors.passwordTooShort') },
+              { max: 128, message: t('errors.passwordTooLong') },
+              { pattern: /^(?=.*[a-zA-Z])(?=.*[0-9]).+$/, message: t('errors.passwordTooWeak') },
+            ]}
+          >
+            <Input.Password autoComplete="new-password" />
+          </Form.Item>
+          <Form.Item name="locale" label={t('appUsers.locale')}>
+            <Select
+              options={[
+                { value: 'zh', label: t('common.zh') },
+                { value: 'en', label: t('common.en') },
+              ]}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <Modal
         open={Boolean(editing)}

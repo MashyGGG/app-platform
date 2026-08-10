@@ -41,12 +41,28 @@ Every mutating endpoint writes an `AuditLog` row **inside the same `prisma.$tran
 business write (`src/lib/audit.ts` returns Prisma create-args for exactly this reason). If the audit
 insert fails, the mutation rolls back with it.
 
-Actions form a closed set shared with the database enum: `APP_USER_UPDATE`, `APP_USER_DISABLE`,
-`APP_USER_ENABLE`, `ADMIN_USER_CREATE`, `ADMIN_USER_UPDATE_ROLE`, `ADMIN_USER_DISABLE`,
-`ADMIN_USER_ENABLE`. `meta` records `{ fields, before, after }` for updates.
+Actions form a closed set shared with the database enum: `APP_USER_CREATE`, `APP_USER_UPDATE`,
+`APP_USER_DISABLE`, `APP_USER_ENABLE`, `ADMIN_USER_CREATE`, `ADMIN_USER_UPDATE_ROLE`,
+`ADMIN_USER_DISABLE`, `ADMIN_USER_ENABLE`. `meta` records `{ fields, before, after }` for updates;
+for a create there is no before-state to diff against, so it records what was created instead.
 
 **The audit log is read-only by construction** — `GET /api/audit-logs` exists; no create, update or
 delete handler is defined anywhere in the app.
+
+## Managing APP users
+
+`/[locale]/app-users` covers create, read and update. Both roles may create (`appUser.create`), the
+same as editing and enabling/disabling.
+
+**There is no delete.** `status: disabled` is the product's deletion: it takes effect on the user's
+very next request and keeps the audit trail pointing at a row that still exists. Adding a hard
+delete would leave every `AuditLog.targetId` naming a user nobody can look up.
+
+The admin sets the initial password, validated against the same `passwordSchema` as self-service
+registration — a console-created account is never weaker than one a user made themselves. Nothing is
+emailed (password reset is switched off), so the password has to be handed over out of band.
+`emailVerified` stays null, matching app-web's registration: an admin typing an address is not proof
+that it was verified.
 
 ## Guard rails on privileged mutations
 
@@ -55,6 +71,10 @@ delete handler is defined anywhere in the app.
   out of its own administration.
 - Creating an admin for an email that already exists **promotes that user** rather than creating a
   duplicate account.
+- Creating an **APP** user for an existing email is refused (`EMAIL_TAKEN`) — the asymmetry is
+  deliberate. Promotion is meaningful because a person may be both an APP user and an admin
+  (SPEC §7); "demotion by creation" is not, and reusing the row would silently overwrite someone's
+  password.
 
 ## Dashboard cache
 

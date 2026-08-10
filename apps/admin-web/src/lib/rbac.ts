@@ -8,6 +8,7 @@ import type { AdminRoleName } from '@app/shared'
 export const PERMISSIONS = {
   'dashboard.view': ['super_admin', 'operator'],
   'appUser.view': ['super_admin', 'operator'],
+  'appUser.create': ['super_admin', 'operator'],
   'appUser.update': ['super_admin', 'operator'],
   'appUser.setStatus': ['super_admin', 'operator'],
   'adminUser.view': ['super_admin'],
