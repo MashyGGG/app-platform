@@ -91,6 +91,9 @@ Two Vercel projects, one repository:
 
 Install command for both: `pnpm install --frozen-lockfile`.
 
+These settings still matter even though Git deployments are off: the `deploy` job ships source and
+Vercel builds it with exactly this configuration.
+
 **The `cd ../..` matters.** Vercel runs the build command inside the Root Directory, where `pnpm build`
 would resolve to that app's own `next build` — skipping `@app/db#generate`, so the build fails on a
 missing Prisma client (`packages/db/generated/` is git-ignored). Only the root Turborepo run honours
@@ -111,21 +114,56 @@ allow-list as well.
 
 ### Who deploys what
 
-**Vercel's Git integration builds and deploys both projects** — previews on every PR, production on
-every push to `main`. GitHub Actions does not deploy; [.github/workflows/ci.yml](.github/workflows/ci.yml)
-owns the two things Vercel does not do:
+**Production is released, not pushed.** [.github/workflows/ci.yml](.github/workflows/ci.yml) owns the
+entire path, and Vercel's Git integration is switched off (`git.deploymentEnabled: false` in each
+app's `vercel.json`) so a push can never deploy behind the workflow's back. Previews are disabled.
 
-1. **quality** (PRs and pushes) — schema-owner guard → `prisma validate` → `migrate deploy` against a
-   throwaway Postgres service → **migration drift check** (`prisma migrate diff --exit-code`) →
-   generate → lint → format → typecheck → build. Needs no secrets.
-2. **migrate** (pushes to `main`) — `prisma migrate deploy` against the production database.
-   Needs `DATABASE_URL` and `DIRECT_URL` as repository secrets; `needs: quality` keeps a red build
-   from touching production.
+| Trigger               | Jobs                             | Touches production |
+| --------------------- | -------------------------------- | ------------------ |
+| Pull request → `main` | `quality`                        | no                 |
+| Push to `main`        | — nothing                        | no                 |
+| **Release published** | `quality` → `migrate` → `deploy` | yes                |
 
-**This is a race, not a gate.** Vercel starts building the moment you push, so the migration is not
-guaranteed to land before the new code. Keep migrations backward compatible, or run `pnpm db:deploy`
-by hand before merging anything destructive. To stop broken code reaching Vercel at all, protect
-`main` with **Require status checks to pass → Quality**.
+1. **quality** — schema-owner guard → `prisma validate` → `migrate deploy` against a throwaway
+   Postgres service → **migration drift check** (`prisma migrate diff --exit-code`) → generate →
+   lint → format → typecheck → build. Needs no secrets.
+2. **migrate** — `prisma migrate deploy` against the production database.
+3. **deploy** — `vercel deploy --prod` for both projects in parallel. It uploads the source and lets
+   Vercel build it with each project's own Root Directory and Build Command, so the build
+   configuration lives in exactly one place.
+
+`needs:` chains the three, so **the migration is now a gate rather than a race**: a failed migration
+leaves the previous release serving. The window between `migrate` and `deploy` still exists though,
+so a migration must be readable by the _previous_ release — keep using expand/contract (add columns
+in one release, drop them in a later one).
+
+The `deploy` job checks out the commit the **tag** points at, not whatever `main` has drifted to.
+
+To stop a broken commit from being taggable at all, protect `main` with **Require status checks to
+pass → Quality**.
+
+#### Cutting a release
+
+```bash
+git tag v0.2.0 && git push origin v0.2.0
+gh release create v0.2.0 --generate-notes   # this is what fires the workflow
+```
+
+The trigger is `release: types: [published]` — creating a tag alone does nothing, and a _draft_
+release does nothing until it is published.
+
+#### Required GitHub configuration
+
+| Kind     | Name                                                          |
+| -------- | ------------------------------------------------------------- |
+| Secret   | `DATABASE_URL`, `DIRECT_URL`                                  |
+| Secret   | `VERCEL_TOKEN`, `VERCEL_ORG_ID`                               |
+| Secret   | `VERCEL_PROJECT_ID_APP_WEB`, `VERCEL_PROJECT_ID_ADMIN_WEB`    |
+| Variable | `DATABASE_SCHEMA` (optional; must match both Vercel projects) |
+
+The two project IDs are in each Vercel project's **Settings → General**, or in `.vercel/project.json`
+after running `vercel link`. Both `migrate` and `deploy` use the `production` environment, so adding
+required reviewers there gives you a manual approval step before anything lands.
 
 ## Documentation
 
@@ -144,11 +182,12 @@ by hand before merging anything destructive. To stop broken code reaching Vercel
    database check on every authenticated request. Prisma cannot run on the Edge, where middleware
    executes, so middleware is only a cheap cookie/route gate; `requireUser()` / `requireAdmin()`
    perform the authoritative per-request lookup. See each app's README.
-3. **Deployment is Vercel's, not the workflow's (AC-10 / AC-11).** The spec has GitHub Actions
-   deploy previews and gate production behind `needs: [quality, migrate]`. We use Vercel's Git
-   integration instead, which is simpler and needs no Vercel token in CI — but it deploys on push,
-   so migrations race the deploy rather than gating it. Vercel's own PR bot supplies the preview
-   URLs that AC-10 asks the workflow to comment.
+3. **Production is gated behind a release, not a push (AC-10 / AC-11).** The spec has GitHub Actions
+   deploy previews and gate production behind `needs: [quality, migrate]`. The gating is
+   implemented — `deploy` needs `migrate` needs `quality` — but the trigger is a published
+   **release** rather than a push to `main`, so shipping is an explicit act. **Preview deployments
+   are disabled**, so nothing satisfies AC-10's preview-URL comment; re-enable them in Vercel if
+   that changes.
 4. **Password reset is switched off (AC-4).** Product decision — not needed for now. The
    implementation is complete and untouched; its four route folders in `app-web` were renamed to
    `_forgot-password` / `_reset-password`, which is Next.js's private-folder convention for keeping

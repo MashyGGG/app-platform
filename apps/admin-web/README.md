@@ -87,3 +87,7 @@ Root Directory `apps/admin-web`, install `pnpm install --frozen-lockfile`, build
 `cd ../.. && pnpm turbo run build --filter=admin-web` — the build must run from the repo root so
 Turborepo generates the Prisma client first. The `build` script also copies the Prisma query engine next to the app (`scripts/copy-prisma-engine.mjs`); see the root README for why. Consider putting the deployment behind Vercel Authentication or an IP allow-list — nothing in the
 application assumes the console is publicly reachable.
+
+Git deployments are **disabled** (`vercel.json`) and previews are off. The only way this app reaches
+production is the `deploy` job in `.github/workflows/ci.yml`, which fires when a **release is
+published** — after migrations have been applied.

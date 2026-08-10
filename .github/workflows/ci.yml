@@ -1,23 +1,29 @@
-# Deployment is NOT done here — Vercel's Git integration builds and deploys both
-# projects on its own. This workflow owns the two things Vercel does not do:
-# the quality gate, and applying migrations to the production database.
+# Releases drive production. This workflow owns the whole path:
 #
-# Consequence to be aware of: Vercel starts building the moment you push, so the
-# `migrate` job below races the deploy rather than gating it. Keep migrations
-# backward compatible, or run `pnpm db:deploy` by hand before merging anything
-# destructive. Protect `main` with the `quality` check as a required status so
-# broken code never reaches Vercel in the first place.
+#   pull_request → main   quality only. Nothing is deployed, production is never touched.
+#   release (published)   quality → migrate → deploy. Sequential, so a failed
+#                         migration stops the deploy instead of racing it.
+#
+# Pushing to `main` deliberately triggers NOTHING. Vercel's Git integration must
+# stay disabled (see apps/*/vercel.json) or it would deploy on push behind this
+# workflow's back; deployment happens only through the `deploy` job below, which
+# builds the exact commit the release tag points at.
+#
+# Protect `main` with the `quality` check as a required status so a red build
+# can never be tagged in the first place.
 name: CI
 
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
+  release:
+    types: [published]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Superseding a PR push is fine; cancelling a half-finished release would
+  # leave migrations applied and the deploy missing.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   TURBO_TELEMETRY_DISABLED: 1
@@ -25,7 +31,7 @@ env:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # AC-13 — quality gate. Runs on both PR and push to main. Needs no secrets:
+  # AC-13 — quality gate. Runs on PRs and again on release. Needs no secrets:
   # the throwaway Postgres service below stands in for the production database.
   # ---------------------------------------------------------------------------
   quality:
@@ -112,15 +118,21 @@ jobs:
         run: pnpm build
 
   # ---------------------------------------------------------------------------
-  # Push to main: apply committed migrations to the production database.
+  # Release: apply committed migrations to the production database, BEFORE the
+  # new code is deployed.
   #
   # Migrations run from packages/db and nowhere else (SPEC §1.2) — never from a
   # Vercel build, which is why this lives here rather than in a build command.
-  # `needs: quality` means a red build never migrates production.
+  # `needs: quality` means a red build never migrates production; `deploy` in
+  # turn needs this job, so a failed migration leaves the old code serving.
+  #
+  # The ordering is migrate-then-deploy, so a migration must be readable by the
+  # PREVIOUS release for the window between the two jobs. Expand/contract still
+  # applies: add columns in one release, drop them in a later one.
   # ---------------------------------------------------------------------------
   migrate:
     name: Prisma migrate deploy (packages/db)
-    if: github.event_name == 'push'
+    if: github.event_name == 'release'
     needs: quality
     runs-on: ubuntu-latest
     environment: production
@@ -148,3 +160,59 @@ jobs:
           # migrate a schema the apps never read.
           DATABASE_SCHEMA: ${{ vars.DATABASE_SCHEMA }}
         run: pnpm exec prisma migrate deploy
+
+  # ---------------------------------------------------------------------------
+  # Release: promote the tagged commit to production on Vercel.
+  #
+  # This does NOT build locally. `vercel deploy` uploads the source and Vercel
+  # builds it with the project's own Root Directory and Build Command
+  # (`cd ../.. && pnpm turbo run build --filter=<app>`) — the configuration that
+  # is already known to work. Building here with `vercel build --prebuilt` would
+  # mean reproducing the monorepo build twice, in two places, forever.
+  #
+  # Deployments are per-project, so the two apps deploy in parallel with
+  # fail-fast disabled: if app-web fails there is no reason to abort a
+  # half-finished admin-web.
+  # ---------------------------------------------------------------------------
+  deploy:
+    name: Deploy ${{ matrix.app }} (production)
+    if: github.event_name == 'release'
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: production
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: app-web
+            project_id_secret: VERCEL_PROJECT_ID_APP_WEB
+          - app: admin-web
+            project_id_secret: VERCEL_PROJECT_ID_ADMIN_WEB
+    env:
+      # Both are read by the Vercel CLI directly; setting them is what lets it
+      # skip `vercel link` and work in a bare checkout.
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      # For a `release` event this checks out the commit the tag points at, not
+      # whatever `main` has drifted to since — that is the whole point of
+      # releasing rather than pushing.
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Runs from the REPO ROOT on purpose: that uploads the same file tree the
+      # Git integration used to, so the project's Root Directory (`apps/<app>`)
+      # and "Include source files outside of the Root Directory" resolve exactly
+      # as before. Deploying from inside apps/<app> would upload a tree in which
+      # that Root Directory no longer exists.
+      - name: Deploy to Vercel
+        id: deploy
+        run: |
+          set -euo pipefail
+          url=$(npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "🚀 ${{ matrix.app }} → $url" >> "$GITHUB_STEP_SUMMARY"

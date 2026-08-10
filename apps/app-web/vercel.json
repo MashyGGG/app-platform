@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "//": "Production is released, not pushed. Git-triggered deployments are off so a push to main cannot deploy behind .github/workflows/ci.yml; the `deploy` job in that workflow is the only way this project reaches production. Deploying via the Vercel CLI is unaffected by this setting.",
+  "git": {
+    "deploymentEnabled": false
+  }
+}
