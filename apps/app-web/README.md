@@ -89,8 +89,10 @@ Vercel Upstash integration injects, and `getRedis()` accepts either pair.
 
 Root Directory `apps/app-web`, install `pnpm install --frozen-lockfile`, build
 `cd ../.. && pnpm turbo run build --filter=app-web` — the build must run from the repo root so
-Turborepo generates the Prisma client first. Do **not** add a `prisma migrate` step here — migrations run from `packages/db` in the
-`migrate` job of `.github/workflows/ci.yml`, before the production deploy.
+Turborepo generates the Prisma client first. Deployments are triggered by Vercel's Git integration.
+
+Do **not** add a `prisma migrate` step here — migrations run from `packages/db` in the `migrate` job
+of `.github/workflows/ci.yml`.
 
 `next.config.ts` marks `@prisma/client` and `@node-rs/argon2` as `serverExternalPackages` and sets
 `outputFileTracingRoot` to the monorepo root. Both packages are also direct dependencies of this

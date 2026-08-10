@@ -1,4 +1,13 @@
-name: CI / CD
+# Deployment is NOT done here — Vercel's Git integration builds and deploys both
+# projects on its own. This workflow owns the two things Vercel does not do:
+# the quality gate, and applying migrations to the production database.
+#
+# Consequence to be aware of: Vercel starts building the moment you push, so the
+# `migrate` job below races the deploy rather than gating it. Keep migrations
+# backward compatible, or run `pnpm db:deploy` by hand before merging anything
+# destructive. Protect `main` with the `quality` check as a required status so
+# broken code never reaches Vercel in the first place.
+name: CI
 
 on:
   pull_request:
@@ -16,7 +25,8 @@ env:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # AC-10 / AC-13 — quality gate. Runs on both PR and push to main.
+  # AC-13 — quality gate. Runs on both PR and push to main. Needs no secrets:
+  # the throwaway Postgres service below stands in for the production database.
   # ---------------------------------------------------------------------------
   quality:
     name: Quality (lint / format / typecheck / schema owner)
@@ -102,84 +112,11 @@ jobs:
         run: pnpm build
 
   # ---------------------------------------------------------------------------
-  # AC-10 — PR: deploy both apps to Vercel Preview, comment the URLs back.
-  # Preview deliberately does NOT run migrations (SPEC §1.2).
-  # ---------------------------------------------------------------------------
-  preview:
-    name: Vercel Preview (${{ matrix.app }})
-    if: github.event_name == 'pull_request'
-    needs: quality
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    outputs:
-      url: ${{ steps.deploy.outputs.url }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - app: app-web
-            project_id_secret: VERCEL_PROJECT_ID_APP
-          - app: admin-web
-            project_id_secret: VERCEL_PROJECT_ID_ADMIN
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install Vercel CLI
-        run: npm i -g vercel@latest
-
-      - name: Pull Vercel env (preview)
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Build
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Deploy
-        id: deploy
-        run: |
-          url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-
-      - name: Comment preview URL on PR
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const app = '${{ matrix.app }}'
-            const url = '${{ steps.deploy.outputs.url }}'
-            const marker = `<!-- preview:${app} -->`
-            const body = `${marker}\n**${app}** preview: ${url}`
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            })
-            const existing = comments.find((c) => c.body?.includes(marker))
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              })
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              })
-            }
-
-  # ---------------------------------------------------------------------------
-  # AC-11 — push to main: migrate FIRST (packages/db only), then Production.
+  # Push to main: apply committed migrations to the production database.
+  #
+  # Migrations run from packages/db and nowhere else (SPEC §1.2) — never from a
+  # Vercel build, which is why this lives here rather than in a build command.
+  # `needs: quality` means a red build never migrates production.
   # ---------------------------------------------------------------------------
   migrate:
     name: Prisma migrate deploy (packages/db)
@@ -206,38 +143,3 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
         run: pnpm exec prisma migrate deploy
-
-  production:
-    name: Vercel Production (${{ matrix.app }})
-    if: github.event_name == 'push'
-    needs: [quality, migrate]
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - app: app-web
-            project_id_secret: VERCEL_PROJECT_ID_APP
-          - app: admin-web
-            project_id_secret: VERCEL_PROJECT_ID_ADMIN
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install Vercel CLI
-        run: npm i -g vercel@latest
-
-      - name: Pull Vercel env (production)
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Build
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Deploy
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

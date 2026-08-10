@@ -94,16 +94,23 @@ Directory** enabled.
 `admin-web` sends `robots: noindex`; consider putting it behind Vercel Authentication or an IP
 allow-list as well.
 
-`.github/workflows/ci.yml` does:
+### Who deploys what
 
-1. **quality** — schema-owner guard → `prisma validate` → `migrate deploy` against a throwaway
-   Postgres service → **migration drift check** (`prisma migrate diff --exit-code`) → generate →
-   lint → format → typecheck → build.
-2. **preview** (PRs) — `vercel pull/build/deploy` for both apps in a matrix, then posts a sticky
-   comment with both preview URLs.
-3. **migrate** (push to `main`) — `prisma migrate deploy` against production.
-4. **production** — deploys both apps, gated on `needs: [quality, migrate]` so the schema is always
-   migrated before the code that depends on it goes live.
+**Vercel's Git integration builds and deploys both projects** — previews on every PR, production on
+every push to `main`. GitHub Actions does not deploy; [.github/workflows/ci.yml](.github/workflows/ci.yml)
+owns the two things Vercel does not do:
+
+1. **quality** (PRs and pushes) — schema-owner guard → `prisma validate` → `migrate deploy` against a
+   throwaway Postgres service → **migration drift check** (`prisma migrate diff --exit-code`) →
+   generate → lint → format → typecheck → build. Needs no secrets.
+2. **migrate** (pushes to `main`) — `prisma migrate deploy` against the production database.
+   Needs `DATABASE_URL` and `DIRECT_URL` as repository secrets; `needs: quality` keeps a red build
+   from touching production.
+
+**This is a race, not a gate.** Vercel starts building the moment you push, so the migration is not
+guaranteed to land before the new code. Keep migrations backward compatible, or run `pnpm db:deploy`
+by hand before merging anything destructive. To stop broken code reaching Vercel at all, protect
+`main` with **Require status checks to pass → Quality**.
 
 ## Documentation
 
@@ -122,3 +129,8 @@ allow-list as well.
    database check on every authenticated request. Prisma cannot run on the Edge, where middleware
    executes, so middleware is only a cheap cookie/route gate; `requireUser()` / `requireAdmin()`
    perform the authoritative per-request lookup. See each app's README.
+3. **Deployment is Vercel's, not the workflow's (AC-10 / AC-11).** The spec has GitHub Actions
+   deploy previews and gate production behind `needs: [quality, migrate]`. We use Vercel's Git
+   integration instead, which is simpler and needs no Vercel token in CI — but it deploys on push,
+   so migrations race the deploy rather than gating it. Vercel's own PR bot supplies the preview
+   URLs that AC-10 asks the workflow to comment.
