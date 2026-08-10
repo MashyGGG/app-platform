@@ -1,20 +1,11 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { config as loadEnv } from 'dotenv'
 import { defineConfig } from 'prisma/config'
-import { applySchemaToEnv } from './src/schema-url'
+import { loadDbEnv } from './src/load-env'
 
-const here = path.dirname(fileURLToPath(import.meta.url))
-
-// Env lives at the repo root (one file for the whole monorepo). Vercel/CI
-// inject real env vars instead, and dotenv silently no-ops when the file is
-// absent — so this is safe everywhere.
-loadEnv({ path: path.resolve(here, '../../.env'), quiet: true })
-loadEnv({ path: path.resolve(here, '.env'), quiet: true, override: true })
-
-// The CLI must target the same schema as the runtime client, or `migrate` would
-// happily create tables somewhere the app never looks.
-applySchemaToEnv()
+// Env lives at the repo root (one file for the whole monorepo). Shared with the
+// seed script so the CLI and the seed can never disagree about which database —
+// or which schema — they are pointed at.
+loadDbEnv()
 
 export default defineConfig({
   schema: path.join('prisma', 'schema.prisma'),
