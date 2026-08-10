@@ -1,0 +1,83 @@
+{
+  "common": {
+    "appName": "APP Platform",
+    "language": "Language",
+    "zh": "中文",
+    "en": "English",
+    "submit": "Submit",
+    "logout": "Sign out",
+    "loading": "Loading…"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Use your email and password to sign in",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "noAccount": "No account yet?",
+      "register": "Create one",
+      "forgot": "Forgot password?"
+    },
+    "register": {
+      "title": "Create account",
+      "subtitle": "Sign up with your email",
+      "name": "Display name",
+      "email": "Email",
+      "password": "Password",
+      "passwordHint": "At least 8 characters, with letters and numbers",
+      "submit": "Create account",
+      "haveAccount": "Already registered?",
+      "login": "Sign in",
+      "success": "Account created — taking you home…"
+    },
+    "forgot": {
+      "title": "Forgot password",
+      "subtitle": "Enter your email and we'll send a one-time reset link",
+      "email": "Email",
+      "submit": "Send reset link",
+      "sent": "If that email is registered, a reset link is on its way (valid for 1 hour).",
+      "backToLogin": "Back to sign in"
+    },
+    "reset": {
+      "title": "Reset password",
+      "subtitle": "Choose a new password for your account",
+      "password": "New password",
+      "confirm": "Confirm new password",
+      "submit": "Reset password",
+      "success": "Password updated. Please sign in with your new password.",
+      "goLogin": "Go to sign in",
+      "missingToken": "This reset link is invalid or incomplete."
+    }
+  },
+  "home": {
+    "hello": "Hello World",
+    "title": "Home",
+    "welcome": "Welcome back",
+    "email": "Email",
+    "name": "Name",
+    "status": "Status",
+    "locale": "Preferred language",
+    "createdAt": "Member since",
+    "statusActive": "Active",
+    "statusDisabled": "Disabled"
+  },
+  "errors": {
+    "rateLimited": "Too many attempts. Please try again later.",
+    "validationFailed": "Some fields are invalid. Please check and retry.",
+    "invalidCredentials": "Incorrect email or password.",
+    "emailTaken": "That email is already registered.",
+    "accountDisabled": "This account has been disabled. Contact an administrator.",
+    "unauthorized": "Please sign in first.",
+    "forbidden": "You do not have permission to do that.",
+    "notFound": "Not found.",
+    "invalidToken": "This link is invalid or has expired.",
+    "internal": "Something went wrong. Please try again.",
+    "invalidEmail": "Enter a valid email address.",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "passwordTooLong": "Password must be at most 128 characters.",
+    "passwordTooWeak": "Password must contain both letters and numbers.",
+    "passwordMismatch": "The two passwords do not match.",
+    "network": "Network error. Please try again."
+  }
+}

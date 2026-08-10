@@ -1,0 +1,83 @@
+{
+  "common": {
+    "appName": "APP 平台",
+    "language": "语言",
+    "zh": "中文",
+    "en": "English",
+    "submit": "提交",
+    "logout": "退出登录",
+    "loading": "加载中…"
+  },
+  "auth": {
+    "login": {
+      "title": "登录",
+      "subtitle": "使用邮箱和密码登录你的账号",
+      "email": "邮箱",
+      "password": "密码",
+      "submit": "登录",
+      "noAccount": "还没有账号？",
+      "register": "去注册",
+      "forgot": "忘记密码？"
+    },
+    "register": {
+      "title": "注册",
+      "subtitle": "创建一个新账号",
+      "name": "昵称",
+      "email": "邮箱",
+      "password": "密码",
+      "passwordHint": "至少 8 位，需包含字母和数字",
+      "submit": "注册",
+      "haveAccount": "已有账号？",
+      "login": "去登录",
+      "success": "注册成功，正在进入首页…"
+    },
+    "forgot": {
+      "title": "忘记密码",
+      "subtitle": "输入邮箱，我们会发送一次性重置链接",
+      "email": "邮箱",
+      "submit": "发送重置链接",
+      "sent": "如果该邮箱已注册，重置链接已发送，请查收（有效期 1 小时）。",
+      "backToLogin": "返回登录"
+    },
+    "reset": {
+      "title": "重置密码",
+      "subtitle": "为账号设置一个新密码",
+      "password": "新密码",
+      "confirm": "确认新密码",
+      "submit": "确认重置",
+      "success": "密码已重置，请使用新密码登录。",
+      "goLogin": "去登录",
+      "missingToken": "重置链接无效或已缺少参数。"
+    }
+  },
+  "home": {
+    "hello": "Hello World",
+    "title": "首页",
+    "welcome": "欢迎回来",
+    "email": "邮箱",
+    "name": "昵称",
+    "status": "状态",
+    "locale": "语言偏好",
+    "createdAt": "注册时间",
+    "statusActive": "正常",
+    "statusDisabled": "已禁用"
+  },
+  "errors": {
+    "rateLimited": "操作过于频繁，请稍后再试。",
+    "validationFailed": "输入内容不合法，请检查后重试。",
+    "invalidCredentials": "邮箱或密码不正确。",
+    "emailTaken": "该邮箱已被注册。",
+    "accountDisabled": "账号已被禁用，请联系管理员。",
+    "unauthorized": "请先登录。",
+    "forbidden": "没有权限执行该操作。",
+    "notFound": "资源不存在。",
+    "invalidToken": "链接无效或已过期，请重新发起。",
+    "internal": "服务器开小差了，请稍后再试。",
+    "invalidEmail": "请输入合法的邮箱地址。",
+    "passwordTooShort": "密码至少 8 位。",
+    "passwordTooLong": "密码不能超过 128 位。",
+    "passwordTooWeak": "密码需同时包含字母和数字。",
+    "passwordMismatch": "两次输入的密码不一致。",
+    "network": "网络异常，请稍后再试。"
+  }
+}

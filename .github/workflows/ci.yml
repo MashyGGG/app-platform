@@ -1,0 +1,229 @@
+name: CI / CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TELEMETRY_DISABLED: 1
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # AC-10 / AC-13 — quality gate. Runs on both PR and push to main.
+  # ---------------------------------------------------------------------------
+  quality:
+    name: Quality (lint / format / typecheck / schema owner)
+    runs-on: ubuntu-latest
+    # Throwaway PostgreSQL: lets us prove the committed migrations actually
+    # apply and match schema.prisma, without ever touching Neon.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ci" --health-interval 5s
+          --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci?schema=public
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/ci?schema=public
+      SHADOW_DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_shadow?schema=public
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Schema-ownership hard constraint (AC-13)
+        run: pnpm check:schema-owner
+
+      - name: Prisma validate (packages/db)
+        run: pnpm --filter @app/db run validate
+
+      - name: Apply committed migrations to throwaway DB
+        working-directory: packages/db
+        run: pnpm exec prisma migrate deploy
+
+      - name: Migration drift check (migrations must equal schema.prisma)
+        working-directory: packages/db
+        run: |
+          pnpm exec prisma migrate diff \
+            --from-migrations ./prisma/migrations \
+            --to-schema-datamodel ./prisma/schema.prisma \
+            --shadow-database-url "$SHADOW_DATABASE_URL" \
+            --exit-code \
+          && echo "✅ migrations in sync" \
+          || (echo "❌ migrations are out of sync with schema.prisma"; exit 1)
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+  # ---------------------------------------------------------------------------
+  # AC-10 — PR: deploy both apps to Vercel Preview, comment the URLs back.
+  # Preview deliberately does NOT run migrations (SPEC §1.2).
+  # ---------------------------------------------------------------------------
+  preview:
+    name: Vercel Preview (${{ matrix.app }})
+    if: github.event_name == 'pull_request'
+    needs: quality
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: app-web
+            project_id_secret: VERCEL_PROJECT_ID_APP
+          - app: admin-web
+            project_id_secret: VERCEL_PROJECT_ID_ADMIN
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Pull Vercel env (preview)
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Comment preview URL on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const app = '${{ matrix.app }}'
+            const url = '${{ steps.deploy.outputs.url }}'
+            const marker = `<!-- preview:${app} -->`
+            const body = `${marker}\n**${app}** preview: ${url}`
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            })
+            const existing = comments.find((c) => c.body?.includes(marker))
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              })
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              })
+            }
+
+  # ---------------------------------------------------------------------------
+  # AC-11 — push to main: migrate FIRST (packages/db only), then Production.
+  # ---------------------------------------------------------------------------
+  migrate:
+    name: Prisma migrate deploy (packages/db)
+    if: github.event_name == 'push'
+    needs: quality
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Migrate deploy
+        working-directory: packages/db
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: pnpm exec prisma migrate deploy
+
+  production:
+    name: Vercel Production (${{ matrix.app }})
+    if: github.event_name == 'push'
+    needs: [quality, migrate]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: app-web
+            project_id_secret: VERCEL_PROJECT_ID_APP
+          - app: admin-web
+            project_id_secret: VERCEL_PROJECT_ID_ADMIN
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Pull Vercel env (production)
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

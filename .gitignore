@@ -1,0 +1,36 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# build
+.next/
+out/
+dist/
+.turbo/
+*.tsbuildinfo
+
+# prisma generated client
+packages/db/generated/
+
+# env
+.env
+.env.*
+!.env.example
+
+# vercel
+.vercel/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# os / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# coverage
+coverage/

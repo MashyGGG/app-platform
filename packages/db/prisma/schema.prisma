@@ -1,0 +1,137 @@
+// -----------------------------------------------------------------------------
+// SOLE SCHEMA OWNER (SPEC §1.2).
+// This is the ONLY schema.prisma in the repository. Never create a second one
+// under apps/** — `pnpm check:schema-owner` fails CI if you do.
+// -----------------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Neon pooled
+  directUrl = env("DIRECT_URL") // Neon direct — migrations only
+}
+
+enum UserStatus {
+  active
+  disabled
+}
+
+enum AdminRole {
+  super_admin
+  operator
+}
+
+/// First-phase closed set (SPEC §1.6). Adding a value REQUIRES a migration —
+/// that is the point: no ad-hoc audit action strings.
+enum AuditAction {
+  APP_USER_UPDATE
+  APP_USER_DISABLE
+  APP_USER_ENABLE
+  ADMIN_USER_CREATE
+  ADMIN_USER_UPDATE_ROLE
+  ADMIN_USER_DISABLE
+  ADMIN_USER_ENABLE
+}
+
+/// APP user   = User WITHOUT AdminProfile
+/// Admin user = User WITH    AdminProfile
+/// The same person may legitimately be both (SPEC §7).
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  emailVerified DateTime?
+  /// Nullable for the Auth.js adapter's contract; every sign-up path sets it.
+  passwordHash  String?
+  name          String?
+  image         String?
+  locale        String     @default("zh")
+  status        UserStatus @default(active)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  adminProfile  AdminProfile?
+  auditsPerformed AuditLog[] @relation("AuditActor")
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+/// Kept for Auth.js adapter compatibility. The RUNTIME session strategy is JWT
+/// (SPEC §1.4), so rows here are not the source of truth for authentication.
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Used by the Auth.js adapter AND by password reset (identifier is namespaced
+/// as `reset:<email>` for reset tokens; see packages/shared/src/tokens.ts).
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@index([identifier])
+}
+
+model AdminProfile {
+  userId    String    @id
+  role      AdminRole
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([role])
+}
+
+/// Append-only (SPEC §1.6): no update, no delete, ever.
+model AuditLog {
+  id          String      @id @default(cuid())
+  actorUserId String
+  action      AuditAction
+  targetType  String
+  targetId    String
+  meta        Json?
+  ip          String?
+  createdAt   DateTime    @default(now())
+
+  actor User @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([createdAt])
+  @@index([actorUserId])
+  @@index([action])
+  @@index([targetType, targetId])
+}

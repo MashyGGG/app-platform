@@ -1,0 +1,116 @@
+# app-platform
+
+A pnpm + Turborepo monorepo holding two Next.js 15 applications that share **one** PostgreSQL database and **one** Prisma schema.
+
+| Workspace         | What it is                                    | Local port |
+| ----------------- | --------------------------------------------- | ---------- |
+| `apps/app-web`    | User-facing web app (register / login / Home) | 3000       |
+| `apps/admin-web`  | Backoffice console (RBAC, audit)              | 3001       |
+| `packages/db`     | **Sole Prisma Schema Owner** + shared client  | —          |
+| `packages/shared` | Password hashing, rate limit, errors, zod     | —          |
+
+## Non-negotiable rules
+
+1. **`packages/db` owns the schema.** No `.prisma` file, no `prisma/migrations/` directory, and no
+   `prisma migrate` / `prisma db push` script may exist inside `apps/*`. This is enforced by
+   `pnpm check:schema-owner`, which runs in CI before anything else.
+2. **Never migrate from inside an app.** All migration commands run at the repo root
+   (`pnpm db:migrate`, `pnpm db:deploy`) and target `packages/db`.
+3. **Never commit secrets.** `.env` is git-ignored; `.env.example` is the documented contract.
+4. Both apps talk to PostgreSQL **only** through the `prisma` singleton exported by `@app/db`.
+
+## Prerequisites
+
+- Node 20+
+- pnpm 11 (`corepack enable`)
+- Docker (for the local Postgres + Redis stack)
+
+## First run
+
+```bash
+cp .env.example .env          # local Docker defaults already filled in
+docker compose up -d          # postgres:5432, redis (internal), upstash-REST shim:8079
+pnpm install
+pnpm db:migrate               # creates the schema
+pnpm db:seed                  # creates the first super_admin
+pnpm dev                      # app-web :3000 + admin-web :3001
+```
+
+Seeded super admin: `super@local.dev` / `LocalDev!2345` (override via `SEED_SUPER_ADMIN_*`).
+
+### What the Docker stack replaces
+
+| Production      | Local equivalent                                                      |
+| --------------- | --------------------------------------------------------------------- |
+| Neon PostgreSQL | `postgres:16-alpine` on 5432                                          |
+| Upstash Redis   | `hiett/serverless-redis-http` on 8079 (same REST API + token)         |
+| Resend          | If `RESEND_API_KEY` is empty, reset links print to the server console |
+
+Because the REST shim speaks the Upstash wire protocol, `@upstash/ratelimit` runs unmodified
+locally and in production.
+
+## Scripts
+
+| Command                   | What it does                                           |
+| ------------------------- | ------------------------------------------------------ |
+| `pnpm dev`                | Both apps in parallel                                  |
+| `pnpm build`              | Turborepo build (generates the Prisma client first)    |
+| `pnpm typecheck`          | `tsc --noEmit` in every workspace                      |
+| `pnpm lint` / `lint:fix`  | ESLint 9 flat config, run once at the root             |
+| `pnpm format` / `:check`  | Prettier                                               |
+| `pnpm check:schema-owner` | AC-13 guard — fails if any app tries to own the schema |
+| `pnpm db:migrate`         | `prisma migrate dev` in `packages/db`                  |
+| `pnpm db:deploy`          | `prisma migrate deploy` (what CI/production runs)      |
+| `pnpm db:seed`            | Idempotent super_admin seed                            |
+| `pnpm db:validate`        | `prisma validate`                                      |
+
+## Environment variables
+
+See [.env.example](.env.example). Two things that are easy to get wrong:
+
+- **`AUTH_SECRET_APP` and `AUTH_SECRET_ADMIN` must differ.** Together with per-app cookie names
+  (`app-web.session-token` / `admin-web.session-token`) this is what stops an app-web session from
+  ever being replayed against the console.
+- **`DATABASE_URL` is pooled, `DIRECT_URL` is not.** Prisma migrations use `DIRECT_URL`; runtime
+  queries use `DATABASE_URL`.
+
+## Deployment (Vercel)
+
+Two Vercel projects, one repository:
+
+| Project     | Root Directory   | Notes                                                        |
+| ----------- | ---------------- | ------------------------------------------------------------ |
+| `app-web`   | `apps/app-web`   | Public                                                       |
+| `admin-web` | `apps/admin-web` | `robots: noindex`; restrict access at the edge/DNS if needed |
+
+Install command for both: `pnpm install --frozen-lockfile`. Build command: `pnpm build`
+(Turborepo runs `@app/db#generate` first via `dependsOn`).
+
+`.github/workflows/ci.yml` does:
+
+1. **quality** — schema-owner guard → `prisma validate` → `migrate deploy` against a throwaway
+   Postgres service → **migration drift check** (`prisma migrate diff --exit-code`) → generate →
+   lint → format → typecheck → build.
+2. **preview** (PRs) — `vercel pull/build/deploy` for both apps in a matrix, then posts a sticky
+   comment with both preview URLs.
+3. **migrate** (push to `main`) — `prisma migrate deploy` against production.
+4. **production** — deploys both apps, gated on `needs: [quality, migrate]` so the schema is always
+   migrated before the code that depends on it goes live.
+
+## Documentation
+
+- [apps/app-web/README.md](apps/app-web/README.md)
+- [apps/admin-web/README.md](apps/admin-web/README.md)
+- [packages/db/README.md](packages/db/README.md)
+- [docs/APP-ADMIN-LANDING-PROMPT.md](docs/APP-ADMIN-LANDING-PROMPT.md) — the source specification
+
+### Deviations from the specification
+
+1. **No Google OAuth.** The spec asks for Credentials + Google (AC-3); the product decision was
+   email + password only, so no OAuth provider is registered in either app. The Auth.js Prisma
+   adapter and its `Account` table stay in the schema — they are provider-agnostic plumbing, and
+   removing them would be a migration with no functional benefit.
+2. **The `User.status` check lives in the Node runtime, not the middleware.** The spec asks for a
+   database check on every authenticated request. Prisma cannot run on the Edge, where middleware
+   executes, so middleware is only a cheap cookie/route gate; `requireUser()` / `requireAdmin()`
+   perform the authoritative per-request lookup. See each app's README.

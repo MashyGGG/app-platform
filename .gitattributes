@@ -1,0 +1,11 @@
+# Store every text file as LF in the repository and check it out as LF, so a
+# Windows working tree, a Linux CI runner and Prettier (`endOfLine: "lf"`) all
+# agree. Without this, `pnpm format:check` fails on Windows checkouts.
+* text=auto eol=lf
+
+# Never touch binary content.
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
