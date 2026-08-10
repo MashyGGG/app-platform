@@ -118,6 +118,11 @@ allow-list as well.
 entire path, and Vercel's Git integration is switched off (`git.deploymentEnabled: false` in each
 app's `vercel.json`) so a push can never deploy behind the workflow's back. Previews are disabled.
 
+Those two `vercel.json` files must stay bare. Vercel validates them with
+`additionalProperties: false`, so **any** key it does not recognise — a `//` comment, a `$schema`
+pointer — fails the deploy with _"should NOT have additional property"_, and it fails at deploy
+time, long after review. Explanations belong here, not in the file.
+
 | Trigger               | Jobs                             | Touches production |
 | --------------------- | -------------------------------- | ------------------ |
 | Pull request → `main` | `quality`                        | no                 |
