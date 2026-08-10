@@ -149,3 +149,8 @@ by hand before merging anything destructive. To stop broken code reaching Vercel
    integration instead, which is simpler and needs no Vercel token in CI — but it deploys on push,
    so migrations race the deploy rather than gating it. Vercel's own PR bot supplies the preview
    URLs that AC-10 asks the workflow to comment.
+4. **Password reset is switched off (AC-4).** Product decision — not needed for now. The
+   implementation is complete and untouched; its four route folders in `app-web` were renamed to
+   `_forgot-password` / `_reset-password`, which is Next.js's private-folder convention for keeping
+   a directory out of routing. Re-enabling means dropping those underscores and uncommenting the
+   link in `app-web/src/app/[locale]/login/page.tsx` — no code changes.

@@ -4,17 +4,20 @@ The user-facing application. Port **3000**.
 
 ## Routes
 
-| Path                        | Access        | Notes                                        |
-| --------------------------- | ------------- | -------------------------------------------- |
-| `/[locale]`                 | public        | Landing                                      |
-| `/[locale]/login`           | anonymous     | Signed-in users are bounced to `/home`       |
-| `/[locale]/register`        | anonymous     | Auto-signs-in on success                     |
-| `/[locale]/forgot-password` | public        | Always returns success (no user enumeration) |
-| `/[locale]/reset-password`  | token         | Single-use token, revokes all sessions       |
-| `/[locale]/home`            | **protected** | Renders `Hello World`                        |
+| Path                 | Access        | Notes                                  |
+| -------------------- | ------------- | -------------------------------------- |
+| `/[locale]`          | public        | Landing                                |
+| `/[locale]/login`    | anonymous     | Signed-in users are bounced to `/home` |
+| `/[locale]/register` | anonymous     | Auto-signs-in on success               |
+| `/[locale]/home`     | **protected** | Renders `Hello World`                  |
 
-API: `POST /api/auth/register`, `/api/auth/login`, `/api/auth/forgot-password`,
-`/api/auth/reset-password`, `GET /api/auth/force-signout`, `GET /api/me`.
+API: `POST /api/auth/register`, `/api/auth/login`, `GET /api/auth/force-signout`, `GET /api/me`.
+
+**Password reset is switched off** (see the root README's deviations). The pages and API routes are
+unchanged but live in `_forgot-password` / `_reset-password`: a leading underscore makes Next.js
+treat the folder as private and drop it from routing. Re-enabling is two directory renames plus the
+commented-out link in `login/page.tsx`. Everything the flow depends on — `lib/reset-token.ts`, the
+`reset-req` / `reset-confirm` rate limits, the Resend integration — is untouched.
 
 ## Authentication
 
