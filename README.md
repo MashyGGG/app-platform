@@ -73,6 +73,12 @@ See [.env.example](.env.example). Two things that are easy to get wrong:
   ever being replayed against the console.
 - **`DATABASE_URL` is pooled, `DIRECT_URL` is not.** Prisma migrations use `DIRECT_URL`; runtime
   queries use `DATABASE_URL`.
+- **`DATABASE_SCHEMA` isolates us inside a shared database.** Point it at a PostgreSQL schema name
+  (e.g. `app_platform`) and both URLs are rewritten to target it, so our six tables can coexist with
+  another project's — even one that already has a `User` table. Needed because `migrate deploy`
+  refuses to run against a non-empty schema (`P3005`), and because a platform-injected
+  `DATABASE_URL` is read-only, so `?schema=` cannot be appended by hand. Prisma creates the schema
+  on first migrate. Unset ⇒ `public`, as before.
 
 ## Deployment (Vercel)
 

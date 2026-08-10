@@ -1,10 +1,16 @@
 import { PrismaClient } from '../generated/client'
+import { applySchemaToEnv } from './schema-url'
 
 export * from '../generated/client'
+export { applySchemaToEnv, withSchema } from './schema-url'
 
 declare global {
   var __appPrisma: PrismaClient | undefined
 }
+
+// Must run before the client reads DATABASE_URL. No-op unless DATABASE_SCHEMA
+// is set — see ./schema-url.ts for why that variable exists.
+applySchemaToEnv()
 
 function createClient() {
   return new PrismaClient({
