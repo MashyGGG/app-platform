@@ -61,16 +61,30 @@ jobs:
         working-directory: packages/db
         run: pnpm exec prisma migrate deploy
 
+      # `migrate diff --from-migrations` replays the migration folder into a
+      # shadow database. Prisma creates and drops *schemas* inside it, but it
+      # never creates the database itself — so it has to exist first, otherwise
+      # the step dies with P1003.
+      - name: Create shadow database
+        run: PGPASSWORD=ci psql -v ON_ERROR_STOP=1 -h localhost -U ci -d ci -c 'CREATE DATABASE ci_shadow'
+
       - name: Migration drift check (migrations must equal schema.prisma)
         working-directory: packages/db
         run: |
+          set -uo pipefail
           pnpm exec prisma migrate diff \
             --from-migrations ./prisma/migrations \
             --to-schema-datamodel ./prisma/schema.prisma \
             --shadow-database-url "$SHADOW_DATABASE_URL" \
-            --exit-code \
-          && echo "✅ migrations in sync" \
-          || (echo "❌ migrations are out of sync with schema.prisma"; exit 1)
+            --exit-code && status=0 || status=$?
+          # --exit-code: 0 = identical, 2 = drift, anything else = the command
+          # itself failed. Collapsing them all into "out of sync" hides real
+          # errors (a bad connection string reads as a schema problem).
+          case "$status" in
+            0) echo "✅ migrations in sync" ;;
+            2) echo "❌ migrations are out of sync with schema.prisma — run 'pnpm db:migrate' and commit the result"; exit 1 ;;
+            *) echo "❌ prisma migrate diff failed to run (exit $status)"; exit "$status" ;;
+          esac
 
       - name: Generate Prisma client
         run: pnpm db:generate
