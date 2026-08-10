@@ -78,13 +78,21 @@ See [.env.example](.env.example). Two things that are easy to get wrong:
 
 Two Vercel projects, one repository:
 
-| Project     | Root Directory   | Notes                                                        |
-| ----------- | ---------------- | ------------------------------------------------------------ |
-| `app-web`   | `apps/app-web`   | Public                                                       |
-| `admin-web` | `apps/admin-web` | `robots: noindex`; restrict access at the edge/DNS if needed |
+| Project     | Root Directory   | Build command                                         |
+| ----------- | ---------------- | ----------------------------------------------------- |
+| `app-web`   | `apps/app-web`   | `cd ../.. && pnpm turbo run build --filter=app-web`   |
+| `admin-web` | `apps/admin-web` | `cd ../.. && pnpm turbo run build --filter=admin-web` |
 
-Install command for both: `pnpm install --frozen-lockfile`. Build command: `pnpm build`
-(Turborepo runs `@app/db#generate` first via `dependsOn`).
+Install command for both: `pnpm install --frozen-lockfile`.
+
+**The `cd ../..` matters.** Vercel runs the build command inside the Root Directory, where `pnpm build`
+would resolve to that app's own `next build` — skipping `@app/db#generate`, so the build fails on a
+missing Prisma client (`packages/db/generated/` is git-ignored). Only the root Turborepo run honours
+`dependsOn: ["^generate"]`. Both projects also need **Include source files outside of the Root
+Directory** enabled.
+
+`admin-web` sends `robots: noindex`; consider putting it behind Vercel Authentication or an IP
+allow-list as well.
 
 `.github/workflows/ci.yml` does:
 

@@ -84,8 +84,9 @@ NEXT_PUBLIC_APP_URL
 
 ## Vercel
 
-Root Directory `apps/app-web`, install `pnpm install --frozen-lockfile`, build `pnpm build`.
-Do **not** add a `prisma migrate` step here — migrations run from `packages/db` in the
+Root Directory `apps/app-web`, install `pnpm install --frozen-lockfile`, build
+`cd ../.. && pnpm turbo run build --filter=app-web` — the build must run from the repo root so
+Turborepo generates the Prisma client first. Do **not** add a `prisma migrate` step here — migrations run from `packages/db` in the
 `migrate` job of `.github/workflows/ci.yml`, before the production deploy.
 
 `next.config.ts` marks `@prisma/client` and `@node-rs/argon2` as `serverExternalPackages` and sets

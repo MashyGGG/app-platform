@@ -82,6 +82,7 @@ root with `pnpm db:migrate`.
 
 ## Vercel
 
-Root Directory `apps/admin-web`, install `pnpm install --frozen-lockfile`, build `pnpm build`.
-Consider putting the deployment behind Vercel Authentication or an IP allow-list — nothing in the
+Root Directory `apps/admin-web`, install `pnpm install --frozen-lockfile`, build
+`cd ../.. && pnpm turbo run build --filter=admin-web` — the build must run from the repo root so
+Turborepo generates the Prisma client first. Consider putting the deployment behind Vercel Authentication or an IP allow-list — nothing in the
 application assumes the console is publicly reachable.
