@@ -142,4 +142,9 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          # Repository *variable*, not a secret — a schema name is not sensitive,
+          # and `vars.` renders to an empty string when unset, which is a no-op.
+          # Must match DATABASE_SCHEMA in both Vercel projects, or this job would
+          # migrate a schema the apps never read.
+          DATABASE_SCHEMA: ${{ vars.DATABASE_SCHEMA }}
         run: pnpm exec prisma migrate deploy
