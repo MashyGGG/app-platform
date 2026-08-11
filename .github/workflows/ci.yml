@@ -1,8 +1,8 @@
 # Releases drive production. This workflow owns the whole path:
 #
-#   pull_request → main   quality only. Nothing is deployed, production is never touched.
-#   release (published)   resolve-release ∥ quality → migrate → deploy.
-#                         migrate needs both; a failed migration stops deploy.
+#   pull_request → main   quality ∥ e2e. Nothing is deployed, production is never touched.
+#   release (published)   resolve-release ∥ quality ∥ e2e → migrate → deploy.
+#                         migrate needs all three; a failed migration stops deploy.
 #
 # Release tag selects which app(s) deploy (CLI or GitHub UI — same trigger):
 #
@@ -168,6 +168,134 @@ jobs:
         run: pnpm build
 
   # ---------------------------------------------------------------------------
+  # End-to-end gate. Boots the real stack — production builds of both apps, a
+  # throwaway PostgreSQL, and the same Upstash-REST shim used in local dev — and
+  # drives it over HTTP. Nothing is mocked and nothing is stubbed, so this is the
+  # only job that can prove the claims which span two applications: the disabled-
+  # user kill switch, RBAC agreeing across all three layers, write+audit
+  # atomicity, and the two sessions being un-replayable against each other.
+  #
+  # Needs no secrets, exactly like `quality`, and runs in parallel with it.
+  # ---------------------------------------------------------------------------
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci_e2e
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ci" --health-interval 5s
+          --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s
+          --health-timeout 5s --health-retries 20
+      # The apps talk Upstash REST, never raw Redis (packages/shared/src/redis.ts),
+      # so CI needs the same shim docker-compose runs. Service containers share a
+      # network and resolve each other by label, hence `redis://redis:6379`.
+      redis-http:
+        image: hiett/serverless-redis-http:latest
+        env:
+          SRH_MODE: env
+          SRH_TOKEN: ci_e2e_token
+          SRH_CONNECTION_STRING: redis://redis:6379
+        ports: ['8079:80']
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_e2e?schema=public
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/ci_e2e?schema=public
+      UPSTASH_REDIS_REST_URL: http://localhost:8079
+      UPSTASH_REDIS_REST_TOKEN: ci_e2e_token
+      # MUST differ — `session-isolation.spec.ts` asserts that a token minted by
+      # one app cannot be decrypted by the other, and a single shared secret here
+      # would turn a real vulnerability into a green build.
+      AUTH_SECRET_APP: ci-e2e-app-secret-value-at-least-32-chars
+      AUTH_SECRET_ADMIN: ci-e2e-admin-secret-value-at-least-32-chars
+      AUTH_TRUST_HOST: 'true'
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_ADMIN_URL: http://localhost:3001
+      SEED_SUPER_ADMIN_EMAIL: super@ci.local
+      SEED_SUPER_ADMIN_PASSWORD: CiE2eSuper!2345
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # The shim has no health check of its own, and the first sign-in hits the
+      # rate limiter — i.e. Redis — so a race here would read as an auth failure.
+      #
+      # Probe it the way @upstash/redis does: POST the command array to `/`. The
+      # shim has no `/ping` route — `GET /ping` answers 404 with
+      # {"error":"SRH: Endpoint not found..."}, which `curl -sf` cannot tell apart
+      # from a shim that never started. Matching PONG also proves the token is
+      # right and the command reached Redis, not merely that a port is open.
+      - name: Wait for the Upstash REST shim
+        run: |
+          for _ in $(seq 1 30); do
+            body=$(curl -sS -X POST \
+              -H 'Authorization: Bearer ci_e2e_token' \
+              -H 'Content-Type: application/json' \
+              -d '["PING"]' http://localhost:8079 2>&1 || true)
+            case "$body" in
+              *PONG*) echo "✅ redis-http ready: $body"; exit 0 ;;
+            esac
+            sleep 1
+          done
+          echo "❌ redis-http never became ready. Last response: ${body:-<none>}"
+          docker ps --format '{{.Image}}\t{{.Status}}\t{{.Ports}}' || true
+          exit 1
+
+      - name: Prisma client + schema
+        run: |
+          pnpm db:generate
+          pnpm --filter @app/db exec prisma migrate deploy
+
+      - name: Seed the super admin
+        run: pnpm db:seed
+
+      # Keyed on the lockfile: the browser build is pinned by the Playwright
+      # version, so it only needs re-downloading when that moves.
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Chromium
+        run: pnpm --filter @app/e2e exec playwright install --with-deps chromium
+
+      # Playwright starts `next start` for both apps, so they must be built first.
+      - name: Build
+        run: pnpm build
+
+      - name: Run the suite
+        run: pnpm e2e
+
+      - name: Upload the Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
   # Release: apply committed migrations to the production database, BEFORE the
   # new code is deployed.
   #
@@ -184,7 +312,7 @@ jobs:
     name: Prisma migrate deploy (packages/db)
     if: github.event_name == 'release'
     # resolve-release must succeed first so a bad tag never touches production DB.
-    needs: [quality, resolve-release]
+    needs: [quality, e2e, resolve-release]
     runs-on: ubuntu-latest
     environment: production
     steps:

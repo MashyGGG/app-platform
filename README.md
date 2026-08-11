@@ -59,10 +59,29 @@ locally and in production.
 | `pnpm lint` / `lint:fix`  | ESLint 9 flat config, run once at the root             |
 | `pnpm format` / `:check`  | Prettier                                               |
 | `pnpm check:schema-owner` | AC-13 guard — fails if any app tries to own the schema |
+| `pnpm e2e`                | Playwright end-to-end suite against both apps          |
+| `pnpm e2e:ui`             | Same suite in Playwright's interactive runner          |
+| `pnpm e2e:browsers`       | One-time Chromium download                             |
 | `pnpm db:migrate`         | `prisma migrate dev` in `packages/db`                  |
 | `pnpm db:deploy`          | `prisma migrate deploy` (what CI/production runs)      |
 | `pnpm db:seed`            | Idempotent super_admin seed                            |
 | `pnpm db:validate`        | `prisma validate`                                      |
+
+## Verification
+
+```bash
+pnpm lint && pnpm format:check && pnpm typecheck && pnpm build && pnpm check:schema-owner
+pnpm e2e     # needs `docker compose up -d`, `pnpm db:seed` and a `pnpm build` first
+```
+
+That is exactly what CI runs: a `quality` job and an `e2e` job in parallel, both on every PR and again
+on release, and `migrate` needs both — so a red build can never reach production.
+
+The end-to-end suite lives in [e2e/](e2e/) and is the only thing that can verify the invariants below,
+because each of them spans two applications, two cookies, the Edge runtime and the database at once.
+It is black box: it never imports `@app/db`, and creates every fixture through the apps' own
+endpoints. See [docs/E2E-TESTING.md](docs/E2E-TESTING.md) for the design, what is deliberately not
+covered, and where unit tests would still pay for themselves.
 
 ## Environment variables
 
@@ -123,11 +142,11 @@ Those two `vercel.json` files must stay bare. Vercel validates them with
 pointer — fails the deploy with _"should NOT have additional property"_, and it fails at deploy
 time, long after review. Explanations belong here, not in the file.
 
-| Trigger               | Jobs                                                      | Touches production |
-| --------------------- | --------------------------------------------------------- | ------------------ |
-| Pull request → `main` | `quality`                                                 | no                 |
-| Push to `main`        | — nothing                                                 | no                 |
-| **Release published** | `resolve-release` ∥ `quality` → `migrate` → `deploy`     | yes                |
+| Trigger               | Jobs                                                 | Touches production |
+| --------------------- | ---------------------------------------------------- | ------------------ |
+| Pull request → `main` | `quality`                                            | no                 |
+| Push to `main`        | — nothing                                            | no                 |
+| **Release published** | `resolve-release` ∥ `quality` → `migrate` → `deploy` | yes                |
 
 1. **resolve-release** — parse the release tag into a deploy matrix (`app-web` / `admin-web` / both).
    Invalid tags fail here so migrate never runs.
@@ -154,11 +173,11 @@ pass → Quality**.
 Tag name selects which app(s) deploy. Publishing a GitHub Release (website UI or CLI) is what fires
 the workflow — creating a tag alone does nothing, and a _draft_ does nothing until it is published.
 
-| Tag                 | Deploys                         |
-| ------------------- | ------------------------------- |
-| `app-web/v1.2.0`    | app-web only                    |
-| `admin-web/v0.9.1`  | admin-web only                  |
-| `v1.3.0`            | both (use for shared / DB work) |
+| Tag                | Deploys                         |
+| ------------------ | ------------------------------- |
+| `app-web/v1.2.0`   | app-web only                    |
+| `admin-web/v0.9.1` | admin-web only                  |
+| `v1.3.0`           | both (use for shared / DB work) |
 
 Website: **Releases → Draft a new release →** set Tag to one of the above → **Publish release**.
 
@@ -192,6 +211,8 @@ required reviewers there gives you a manual approval step before anything lands.
 - [packages/db/README.md](packages/db/README.md)
 - [docs/APP-ADMIN-LANDING-PROMPT.md](docs/APP-ADMIN-LANDING-PROMPT.md) — the source specification
 - [docs/INDEPENDENT-RELEASES.md](docs/INDEPENDENT-RELEASES.md) — per-app release tags and deploy matrix
+- [docs/E2E-TESTING.md](docs/E2E-TESTING.md) — end-to-end verification: why Playwright, what it covers,
+  and whether unit tests are still needed
 
 ### Deviations from the specification
 

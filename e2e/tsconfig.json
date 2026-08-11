@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    // Playwright's `page.evaluate` bodies run in the browser, so the DOM types
+    // have to be visible even though nothing here ships to a browser.
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"],
+    "module": "CommonJS",
+    "moduleResolution": "Node"
+  },
+  "include": ["**/*.ts"]
+}

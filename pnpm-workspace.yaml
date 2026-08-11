@@ -1,6 +1,9 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  # Black-box end-to-end suite. Its own workspace rather than a root devDep so
+  # `pnpm typecheck` covers it and Playwright never leaks into an app's bundle.
+  - 'e2e'
 
 # pnpm >= 11 requires explicitly approving postinstall scripts.
 allowBuilds:
@@ -11,3 +14,7 @@ allowBuilds:
   unrs-resolver: true
   sharp: true
   '@node-rs/argon2': true
+  # Downloads the browser binaries; `pnpm e2e:browsers` is what actually installs
+  # them, but the postinstall still has to be allowed to run.
+  playwright: true
+  playwright-core: true
