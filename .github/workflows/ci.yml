@@ -236,15 +236,27 @@ jobs:
 
       # The shim has no health check of its own, and the first sign-in hits the
       # rate limiter — i.e. Redis — so a race here would read as an auth failure.
+      #
+      # Probe it the way @upstash/redis does: POST the command array to `/`. The
+      # shim has no `/ping` route — `GET /ping` answers 404 with
+      # {"error":"SRH: Endpoint not found..."}, which `curl -sf` cannot tell apart
+      # from a shim that never started. Matching PONG also proves the token is
+      # right and the command reached Redis, not merely that a port is open.
       - name: Wait for the Upstash REST shim
         run: |
           for _ in $(seq 1 30); do
-            if curl -sf -H 'Authorization: Bearer ci_e2e_token' http://localhost:8079/ping; then
-              echo; echo "✅ redis-http ready"; exit 0
-            fi
+            body=$(curl -sS -X POST \
+              -H 'Authorization: Bearer ci_e2e_token' \
+              -H 'Content-Type: application/json' \
+              -d '["PING"]' http://localhost:8079 2>&1 || true)
+            case "$body" in
+              *PONG*) echo "✅ redis-http ready: $body"; exit 0 ;;
+            esac
             sleep 1
           done
-          echo "❌ redis-http never became ready"; exit 1
+          echo "❌ redis-http never became ready. Last response: ${body:-<none>}"
+          docker ps --format '{{.Image}}\t{{.Status}}\t{{.Ports}}' || true
+          exit 1
 
       - name: Prisma client + schema
         run: |
