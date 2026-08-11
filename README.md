@@ -123,11 +123,11 @@ Those two `vercel.json` files must stay bare. Vercel validates them with
 pointer — fails the deploy with _"should NOT have additional property"_, and it fails at deploy
 time, long after review. Explanations belong here, not in the file.
 
-| Trigger               | Jobs                                                      | Touches production |
-| --------------------- | --------------------------------------------------------- | ------------------ |
-| Pull request → `main` | `quality`                                                 | no                 |
-| Push to `main`        | — nothing                                                 | no                 |
-| **Release published** | `resolve-release` ∥ `quality` → `migrate` → `deploy`     | yes                |
+| Trigger               | Jobs                                                 | Touches production |
+| --------------------- | ---------------------------------------------------- | ------------------ |
+| Pull request → `main` | `quality`                                            | no                 |
+| Push to `main`        | — nothing                                            | no                 |
+| **Release published** | `resolve-release` ∥ `quality` → `migrate` → `deploy` | yes                |
 
 1. **resolve-release** — parse the release tag into a deploy matrix (`app-web` / `admin-web` / both).
    Invalid tags fail here so migrate never runs.
@@ -154,11 +154,11 @@ pass → Quality**.
 Tag name selects which app(s) deploy. Publishing a GitHub Release (website UI or CLI) is what fires
 the workflow — creating a tag alone does nothing, and a _draft_ does nothing until it is published.
 
-| Tag                 | Deploys                         |
-| ------------------- | ------------------------------- |
-| `app-web/v1.2.0`    | app-web only                    |
-| `admin-web/v0.9.1`  | admin-web only                  |
-| `v1.3.0`            | both (use for shared / DB work) |
+| Tag                | Deploys                         |
+| ------------------ | ------------------------------- |
+| `app-web/v1.2.0`   | app-web only                    |
+| `admin-web/v0.9.1` | admin-web only                  |
+| `v1.3.0`           | both (use for shared / DB work) |
 
 Website: **Releases → Draft a new release →** set Tag to one of the above → **Publish release**.
 
