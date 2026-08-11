@@ -123,24 +123,26 @@ Those two `vercel.json` files must stay bare. Vercel validates them with
 pointer — fails the deploy with _"should NOT have additional property"_, and it fails at deploy
 time, long after review. Explanations belong here, not in the file.
 
-| Trigger               | Jobs                             | Touches production |
-| --------------------- | -------------------------------- | ------------------ |
-| Pull request → `main` | `quality`                        | no                 |
-| Push to `main`        | — nothing                        | no                 |
-| **Release published** | `quality` → `migrate` → `deploy` | yes                |
+| Trigger               | Jobs                                                      | Touches production |
+| --------------------- | --------------------------------------------------------- | ------------------ |
+| Pull request → `main` | `quality`                                                 | no                 |
+| Push to `main`        | — nothing                                                 | no                 |
+| **Release published** | `resolve-release` ∥ `quality` → `migrate` → `deploy`     | yes                |
 
-1. **quality** — schema-owner guard → `prisma validate` → `migrate deploy` against a throwaway
+1. **resolve-release** — parse the release tag into a deploy matrix (`app-web` / `admin-web` / both).
+   Invalid tags fail here so migrate never runs.
+2. **quality** — schema-owner guard → `prisma validate` → `migrate deploy` against a throwaway
    Postgres service → **migration drift check** (`prisma migrate diff --exit-code`) → generate →
-   lint → format → typecheck → build. Needs no secrets.
-2. **migrate** — `prisma migrate deploy` against the production database.
-3. **deploy** — `vercel deploy --prod` for both projects in parallel. It uploads the source and lets
-   Vercel build it with each project's own Root Directory and Build Command, so the build
-   configuration lives in exactly one place.
+   lint → format → typecheck → build. Needs no secrets. Still full-monorepo on every release.
+3. **migrate** — `prisma migrate deploy` against the production database (every release, including
+   single-app tags — the command is idempotent).
+4. **deploy** — `vercel deploy --prod` for the apps selected by the tag. Uploads source; Vercel
+   builds with each project's Root Directory and Build Command.
 
-`needs:` chains the three, so **the migration is now a gate rather than a race**: a failed migration
-leaves the previous release serving. The window between `migrate` and `deploy` still exists though,
-so a migration must be readable by the _previous_ release — keep using expand/contract (add columns
-in one release, drop them in a later one).
+`needs:` chains migrate behind quality + resolve-release, so **the migration is a gate rather than
+a race**: a failed migration leaves the previous release serving. The window between `migrate` and
+`deploy` still exists though, so a migration must be readable by the _previous_ release — keep using
+expand/contract (add columns in one release, drop them in a later one).
 
 The `deploy` job checks out the commit the **tag** points at, not whatever `main` has drifted to.
 
@@ -149,13 +151,26 @@ pass → Quality**.
 
 #### Cutting a release
 
+Tag name selects which app(s) deploy. Publishing a GitHub Release (website UI or CLI) is what fires
+the workflow — creating a tag alone does nothing, and a _draft_ does nothing until it is published.
+
+| Tag                 | Deploys                         |
+| ------------------- | ------------------------------- |
+| `app-web/v1.2.0`    | app-web only                    |
+| `admin-web/v0.9.1`  | admin-web only                  |
+| `v1.3.0`            | both (use for shared / DB work) |
+
+Website: **Releases → Draft a new release →** set Tag to one of the above → **Publish release**.
+
+CLI:
+
 ```bash
-git tag v0.2.0 && git push origin v0.2.0
-gh release create v0.2.0 --generate-notes   # this is what fires the workflow
+gh release create app-web/v1.2.0 --generate-notes
+gh release create admin-web/v0.9.1 --generate-notes
+gh release create v1.3.0 --generate-notes
 ```
 
-The trigger is `release: types: [published]` — creating a tag alone does nothing, and a _draft_
-release does nothing until it is published.
+Full conventions and risks: [docs/INDEPENDENT-RELEASES.md](docs/INDEPENDENT-RELEASES.md).
 
 #### Required GitHub configuration
 
@@ -176,6 +191,7 @@ required reviewers there gives you a manual approval step before anything lands.
 - [apps/admin-web/README.md](apps/admin-web/README.md)
 - [packages/db/README.md](packages/db/README.md)
 - [docs/APP-ADMIN-LANDING-PROMPT.md](docs/APP-ADMIN-LANDING-PROMPT.md) — the source specification
+- [docs/INDEPENDENT-RELEASES.md](docs/INDEPENDENT-RELEASES.md) — per-app release tags and deploy matrix
 
 ### Deviations from the specification
 

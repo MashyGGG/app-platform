@@ -1,8 +1,14 @@
 # Releases drive production. This workflow owns the whole path:
 #
 #   pull_request → main   quality only. Nothing is deployed, production is never touched.
-#   release (published)   quality → migrate → deploy. Sequential, so a failed
-#                         migration stops the deploy instead of racing it.
+#   release (published)   resolve-release ∥ quality → migrate → deploy.
+#                         migrate needs both; a failed migration stops deploy.
+#
+# Release tag selects which app(s) deploy (CLI or GitHub UI — same trigger):
+#
+#   app-web/vX.Y.Z      → deploy app-web only
+#   admin-web/vX.Y.Z    → deploy admin-web only
+#   vX.Y.Z              → deploy both (shared / DB changes)
 #
 # Pushing to `main` deliberately triggers NOTHING. Vercel's Git integration must
 # stay disabled (see apps/*/vercel.json) or it would deploy on push behind this
@@ -30,6 +36,50 @@ env:
   NEXT_TELEMETRY_DISABLED: 1
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # Parse the published release tag into a deploy matrix. Invalid tags fail here
+  # so migrate/deploy never run. Runs in parallel with quality on release events.
+  # ---------------------------------------------------------------------------
+  resolve-release:
+    name: Resolve release target
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.parse.outputs.matrix }}
+    steps:
+      - name: Parse tag → deploy matrix
+        id: parse
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          app_web='{"app":"app-web","project_id_secret":"VERCEL_PROJECT_ID_APP_WEB"}'
+          admin_web='{"app":"admin-web","project_id_secret":"VERCEL_PROJECT_ID_ADMIN_WEB"}'
+
+          if [[ "$TAG" =~ ^app-web/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            matrix="[$app_web]"
+            target=app-web
+          elif [[ "$TAG" =~ ^admin-web/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            matrix="[$admin_web]"
+            target=admin-web
+          elif [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            matrix="[$app_web,$admin_web]"
+            target=both
+          else
+            echo "❌ Unsupported release tag: $TAG"
+            echo "Expected: app-web/vX.Y.Z | admin-web/vX.Y.Z | vX.Y.Z"
+            exit 1
+          fi
+
+          {
+            echo "matrix<<EOF"
+            echo "$matrix"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "📦 tag \`$TAG\` → deploy **$target**" >> "$GITHUB_STEP_SUMMARY"
+          echo "matrix=$matrix" >> "$GITHUB_STEP_SUMMARY"
+
   # ---------------------------------------------------------------------------
   # AC-13 — quality gate. Runs on PRs and again on release. Needs no secrets:
   # the throwaway Postgres service below stands in for the production database.
@@ -133,7 +183,8 @@ jobs:
   migrate:
     name: Prisma migrate deploy (packages/db)
     if: github.event_name == 'release'
-    needs: quality
+    # resolve-release must succeed first so a bad tag never touches production DB.
+    needs: [quality, resolve-release]
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -170,24 +221,21 @@ jobs:
   # is already known to work. Building here with `vercel build --prebuilt` would
   # mean reproducing the monorepo build twice, in two places, forever.
   #
-  # Deployments are per-project, so the two apps deploy in parallel with
-  # fail-fast disabled: if app-web fails there is no reason to abort a
-  # half-finished admin-web.
+  # Deployments are per-project. The matrix comes from resolve-release so a
+  # single-app tag only uploads that Vercel project. When both run, fail-fast
+  # is off: if app-web fails there is no reason to abort a half-finished
+  # admin-web.
   # ---------------------------------------------------------------------------
   deploy:
     name: Deploy ${{ matrix.app }} (production)
     if: github.event_name == 'release'
-    needs: migrate
+    needs: [migrate, resolve-release]
     runs-on: ubuntu-latest
     environment: production
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - app: app-web
-            project_id_secret: VERCEL_PROJECT_ID_APP_WEB
-          - app: admin-web
-            project_id_secret: VERCEL_PROJECT_ID_ADMIN_WEB
+        include: ${{ fromJSON(needs.resolve-release.outputs.matrix) }}
     env:
       # Both are read by the Vercel CLI directly; setting them is what lets it
       # skip `vercel link` and work in a bare checkout.
