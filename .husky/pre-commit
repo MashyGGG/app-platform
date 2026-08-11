@@ -1,2 +1,13 @@
 pnpm exec lint-staged
 node scripts/check-schema-ownership.mjs
+
+# The unit suite, but deliberately NOT the E2E suite.
+#
+# `pnpm test` is ~1s, needs no database, no docker and no build, and runs the
+# whole suite regardless of what is staged — so there is no partial-check hole
+# and nothing to wait for. `pnpm e2e` needs docker compose up, a migrated and
+# seeded database and a production build of both apps: ~2.5 minutes when the
+# stack happens to be up, and a guaranteed failure when it is not. Wiring that
+# into a commit teaches you to reach for `--no-verify`, which would disable the
+# checks above along with it. E2E gates on the PR instead (.github/workflows/ci.yml).
+pnpm test

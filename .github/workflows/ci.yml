@@ -15,8 +15,12 @@
 # workflow's back; deployment happens only through the `deploy` job below, which
 # builds the exact commit the release tag points at.
 #
-# Protect `main` with the `quality` check as a required status so a red build
-# can never be tagged in the first place.
+# On a PR these jobs report their status and nothing more — merging is not
+# blocked. That is a deliberate choice, not an oversight: the signal is visible
+# on the PR and a release cannot be cut from a red build anyway, because
+# `migrate` needs both `quality` and `e2e`. To make it a hard gate instead, add
+# both checks (`Quality (…)` and `E2E (Playwright)`) as required statuses on
+# `main` in the repository settings — nothing in this file can do that.
 name: CI
 
 on:
@@ -85,7 +89,7 @@ jobs:
   # the throwaway Postgres service below stands in for the production database.
   # ---------------------------------------------------------------------------
   quality:
-    name: Quality (lint / format / typecheck / schema owner)
+    name: Quality (lint / format / typecheck / unit / schema owner)
     runs-on: ubuntu-latest
     # Throwaway PostgreSQL: lets us prove the committed migrations actually
     # apply and match schema.prisma, without ever touching Neon.
@@ -163,6 +167,13 @@ jobs:
 
       - name: Typecheck
         run: pnpm typecheck
+
+      # Deliberately inside `quality` rather than a job of its own: the suite is
+      # pure functions, needs no service and no secret, and finishes in about a
+      # second — a separate job's queue time would cost more than the tests. It
+      # sits before `build` because it fails faster.
+      - name: Unit tests
+        run: pnpm test
 
       - name: Build
         run: pnpm build

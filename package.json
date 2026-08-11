@@ -15,6 +15,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:schema-owner": "node scripts/check-schema-ownership.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "e2e": "pnpm --filter @app/e2e run test",
     "e2e:ui": "pnpm --filter @app/e2e run test:ui",
     "e2e:report": "pnpm --filter @app/e2e run report",
@@ -30,6 +33,7 @@
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@types/node": "^22.10.7",
+    "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^9.18.0",
     "eslint-config-next": "^15.1.6",
     "eslint-config-prettier": "^10.0.1",
@@ -39,7 +43,8 @@
     "tsx": "^4.19.2",
     "turbo": "^2.3.3",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.21.0"
+    "typescript-eslint": "^8.21.0",
+    "vitest": "^4.1.10"
   },
   "lint-staged": {
     "*.{js,jsx,mjs,cjs,ts,tsx}": [

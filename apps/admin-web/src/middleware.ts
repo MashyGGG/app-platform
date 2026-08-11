@@ -1,8 +1,8 @@
 import createIntlMiddleware from 'next-intl/middleware'
 import { NextResponse } from 'next/server'
 import { authEdge } from '@/auth.edge'
-import { isAppLocale, routing } from '@/i18n/routing'
-import { ROUTE_PERMISSIONS, can } from '@/lib/rbac'
+import { locales, routing } from '@/i18n/routing'
+import { can, resolveConsoleRoute } from '@/lib/rbac'
 
 const intlMiddleware = createIntlMiddleware(routing)
 
@@ -15,18 +15,14 @@ const intlMiddleware = createIntlMiddleware(routing)
  * against the database and are what actually authorise a request.
  */
 export default authEdge((request) => {
-  const segments = request.nextUrl.pathname.split('/')
-  const maybeLocale = segments[1]
-  const hasLocale = isAppLocale(maybeLocale)
-  const locale = hasLocale ? maybeLocale : routing.defaultLocale
-  const rest = `/${segments.slice(hasLocale ? 2 : 1).join('/')}`.replace(/\/$/, '')
+  const {
+    locale,
+    rest,
+    rule: routeRule,
+  } = resolveConsoleRoute(request.nextUrl.pathname, locales, routing.defaultLocale)
 
   const session = request.auth
   const role = session?.user?.role
-
-  const routeRule = ROUTE_PERMISSIONS.find(
-    (rule) => rest === rule.prefix || rest.startsWith(`${rule.prefix}/`),
-  )
 
   if (routeRule) {
     if (!session?.user?.id) {

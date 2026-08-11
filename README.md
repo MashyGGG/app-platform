@@ -59,6 +59,9 @@ locally and in production.
 | `pnpm lint` / `lint:fix`  | ESLint 9 flat config, run once at the root             |
 | `pnpm format` / `:check`  | Prettier                                               |
 | `pnpm check:schema-owner` | AC-13 guard — fails if any app tries to own the schema |
+| `pnpm test`               | Vitest unit suite — pure functions only, ~1 s          |
+| `pnpm test:watch`         | The same suite in watch mode                           |
+| `pnpm test:coverage`      | Coverage report into `coverage/` (no threshold gate)   |
 | `pnpm e2e`                | Playwright end-to-end suite against both apps          |
 | `pnpm e2e:ui`             | Same suite in Playwright's interactive runner          |
 | `pnpm e2e:browsers`       | One-time Chromium download                             |
@@ -70,18 +73,28 @@ locally and in production.
 ## Verification
 
 ```bash
-pnpm lint && pnpm format:check && pnpm typecheck && pnpm build && pnpm check:schema-owner
+pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm check:schema-owner && pnpm build
 pnpm e2e     # needs `docker compose up -d`, `pnpm db:seed` and a `pnpm build` first
 ```
 
 That is exactly what CI runs: a `quality` job and an `e2e` job in parallel, both on every PR and again
 on release, and `migrate` needs both — so a red build can never reach production.
 
-The end-to-end suite lives in [e2e/](e2e/) and is the only thing that can verify the invariants below,
-because each of them spans two applications, two cookies, the Edge runtime and the database at once.
-It is black box: it never imports `@app/db`, and creates every fixture through the apps' own
-endpoints. See [docs/E2E-TESTING.md](docs/E2E-TESTING.md) for the design, what is deliberately not
-covered, and where unit tests would still pay for themselves.
+The **pre-commit hook** ([.husky/pre-commit](.husky/pre-commit)) runs the subset that costs nothing:
+`lint-staged` (Prettier + ESLint on staged files), the schema-ownership guard, and `pnpm test`. The E2E
+suite is left out on purpose — it needs docker, a seeded database and a production build, so it belongs
+on the PR, not in front of every commit.
+
+Two suites, and the split is deliberate rather than a pyramid drawn from habit:
+
+- **Playwright** ([e2e/](e2e/)) is the only thing that can verify the invariants below, because each of
+  them spans two applications, two cookies, the Edge runtime and the database at once. It is black
+  box: it never imports `@app/db`, and creates every fixture through the apps' own endpoints.
+  See [docs/E2E-TESTING.md](docs/E2E-TESTING.md).
+- **Vitest** covers what E2E structurally cannot reach cheaply: boundary tables behind a rate limit,
+  pure functions whose failure mode is silent, and one module whose branches otherwise first run in
+  production. Node environment only — no jsdom, no component tests, no mocked Prisma.
+  See [docs/UNIT-TESTING.md](docs/UNIT-TESTING.md).
 
 ## Environment variables
 
