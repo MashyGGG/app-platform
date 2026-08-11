@@ -34,3 +34,43 @@ export const ROUTE_PERMISSIONS: ReadonlyArray<{ prefix: string; permission: Perm
 ]
 
 export const CONSOLE_PREFIXES = ROUTE_PERMISSIONS.map((r) => r.prefix)
+
+export interface ConsoleRoute {
+  /** Locale from the first path segment, or `defaultLocale` when there isn't one. */
+  locale: string
+  /** The path with the locale segment and one trailing slash removed; `''` at the root. */
+  rest: string
+  /** The rule guarding `rest`, or `undefined` for an ungated path. */
+  rule: (typeof ROUTE_PERMISSIONS)[number] | undefined
+}
+
+/**
+ * Splits a request path into `{ locale, rest, rule }` for the middleware gate.
+ *
+ * Extracted from `middleware.ts` so it can be unit-tested: inside the
+ * `authEdge()` callback none of this was reachable without booting Next, and it
+ * is the one piece of branching logic in the RBAC layer. The locale list is a
+ * parameter rather than an import so the function stays free of `next-intl`.
+ *
+ * `rest.startsWith(`${prefix}/`)` — not `startsWith(prefix)` — is deliberate:
+ * the looser form would gate `/app-users-export` under `/app-users`, and, worse,
+ * a future unrelated `/dashboard-public` route would silently require a login.
+ */
+export function resolveConsoleRoute(
+  pathname: string,
+  locales: readonly string[],
+  defaultLocale: string,
+): ConsoleRoute {
+  const segments = pathname.split('/')
+  const maybeLocale = segments[1]
+  const hasLocale = !!maybeLocale && locales.includes(maybeLocale)
+  const rest = `/${segments.slice(hasLocale ? 2 : 1).join('/')}`.replace(/\/$/, '')
+
+  return {
+    locale: hasLocale ? maybeLocale : defaultLocale,
+    rest,
+    rule: ROUTE_PERMISSIONS.find(
+      (rule) => rest === rule.prefix || rest.startsWith(`${rule.prefix}/`),
+    ),
+  }
+}
