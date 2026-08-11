@@ -59,10 +59,29 @@ locally and in production.
 | `pnpm lint` / `lint:fix`  | ESLint 9 flat config, run once at the root             |
 | `pnpm format` / `:check`  | Prettier                                               |
 | `pnpm check:schema-owner` | AC-13 guard — fails if any app tries to own the schema |
+| `pnpm e2e`                | Playwright end-to-end suite against both apps          |
+| `pnpm e2e:ui`             | Same suite in Playwright's interactive runner          |
+| `pnpm e2e:browsers`       | One-time Chromium download                             |
 | `pnpm db:migrate`         | `prisma migrate dev` in `packages/db`                  |
 | `pnpm db:deploy`          | `prisma migrate deploy` (what CI/production runs)      |
 | `pnpm db:seed`            | Idempotent super_admin seed                            |
 | `pnpm db:validate`        | `prisma validate`                                      |
+
+## Verification
+
+```bash
+pnpm lint && pnpm format:check && pnpm typecheck && pnpm build && pnpm check:schema-owner
+pnpm e2e     # needs `docker compose up -d`, `pnpm db:seed` and a `pnpm build` first
+```
+
+That is exactly what CI runs: a `quality` job and an `e2e` job in parallel, both on every PR and again
+on release, and `migrate` needs both — so a red build can never reach production.
+
+The end-to-end suite lives in [e2e/](e2e/) and is the only thing that can verify the invariants below,
+because each of them spans two applications, two cookies, the Edge runtime and the database at once.
+It is black box: it never imports `@app/db`, and creates every fixture through the apps' own
+endpoints. See [docs/E2E-TESTING.md](docs/E2E-TESTING.md) for the design, what is deliberately not
+covered, and where unit tests would still pay for themselves.
 
 ## Environment variables
 
@@ -192,6 +211,8 @@ required reviewers there gives you a manual approval step before anything lands.
 - [packages/db/README.md](packages/db/README.md)
 - [docs/APP-ADMIN-LANDING-PROMPT.md](docs/APP-ADMIN-LANDING-PROMPT.md) — the source specification
 - [docs/INDEPENDENT-RELEASES.md](docs/INDEPENDENT-RELEASES.md) — per-app release tags and deploy matrix
+- [docs/E2E-TESTING.md](docs/E2E-TESTING.md) — end-to-end verification: why Playwright, what it covers,
+  and whether unit tests are still needed
 
 ### Deviations from the specification
 

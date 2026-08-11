@@ -1,0 +1,20 @@
+{
+  "name": "@app/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Black-box end-to-end verification of app-web + admin-web against a real database.",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report",
+    "browsers": "playwright install chromium",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.1",
+    "@types/node": "^22.10.7",
+    "dotenv": "^16.4.7",
+    "typescript": "^5.7.3"
+  }
+}

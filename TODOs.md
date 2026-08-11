@@ -2,5 +2,5 @@
 - [x] generate Claude.md file, and ignore this file
 - [x] 管理后台支持CRUD APP用户（删除按产品决策落为停用/启用，不做硬删除）
 - [x] 支持单独发布 admin-web/app-web，设置不同版本号
-- [] 端到端验证如何做？是否需要引入第三方依赖库？
+- [x] 端到端验证如何做？是否需要引入第三方依赖库？（引入 Playwright，`e2e` workspace + CI e2e job；见 docs/E2E-TESTING.md）
 - [] 稿子管理，支持 Markdown 格式，支持调用 AI 辅助完成
