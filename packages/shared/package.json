@@ -11,7 +11,8 @@
     "./errors": "./src/errors.ts",
     "./validation": "./src/validation.ts",
     "./speaking": "./src/speaking/index.ts",
-    "./speaking/otp": "./src/speaking/otp.ts"
+    "./speaking/otp": "./src/speaking/otp.ts",
+    "./speaking/wav": "./src/speaking/wav.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

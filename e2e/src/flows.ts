@@ -54,6 +54,28 @@ export async function signIn(
   await jsonOf(res, 200)
 }
 
+/**
+ * Signs the context in with a one-time code, creating the account on the way if
+ * it is new (AC-S9). The code comes back in the request response because these
+ * servers run with `OTP_DEV_ECHO=1`; there is no mailbox to read.
+ *
+ * Preferred over `registerAppUser` for daily-speaking specs: it yields an
+ * account nobody else is practising with, so its one session per day is ours.
+ */
+export async function signInWithOtp(ctx: APIRequestContext, email: string): Promise<void> {
+  const issued = await jsonOf<{ devCode?: string }>(
+    await ctx.post('/api/auth/otp/request', { data: { email, locale: 'en' } }),
+    200,
+  )
+  if (!issued.devCode) {
+    throw new Error('the OTP request did not echo a code — is OTP_DEV_ECHO=1 set for this server?')
+  }
+  await jsonOf(
+    await ctx.post('/api/auth/otp/verify', { data: { email, code: issued.devCode } }),
+    200,
+  )
+}
+
 export async function registerAppUser(
   ctx: APIRequestContext,
   input: { email: string; password: string; name?: string; locale?: 'zh' | 'en' },

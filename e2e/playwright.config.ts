@@ -27,7 +27,18 @@ function webServer(app: 'app-web' | 'admin-web', url: string) {
     // its response instead of mailing it (AC-S9). The route refuses to do this
     // on a production deployment whatever this flag says — see
     // apps/app-web/src/app/api/auth/otp/request/route.ts.
-    env: { OTP_DEV_ECHO: '1' },
+    env: {
+      OTP_DEV_ECHO: '1',
+      // A browser spec that has to speak for a real 30 seconds turns a 20-second
+      // suite into a five-minute one; the 30 s product boundary is a Vitest row
+      // (`packages/shared/src/speaking/wav.test.ts`) instead. Specs that talk to
+      // the upload endpoint directly still send a full-length take.
+      SPEAKING_MIN_DURATION_MS: '2000',
+      // The seeded prompts reference 示范音 keys whose files content ops has not
+      // produced yet; serve silence for them so an <audio> in a test is a real
+      // player rather than a dead src. Refused on a production deployment.
+      SPEAKING_AUDIO_PLACEHOLDER: '1',
+    },
     // Deliberately NOT `!isCI`. Reusing whatever already answers on :3000 is how
     // you end up running the suite against an unrelated project's dev server and
     // reading its 404s as product failures. Opt in with E2E_REUSE=1 when you know
@@ -64,6 +75,21 @@ export default defineConfig({
 
   use: {
     ...devices['Desktop Chrome'],
+    // `/today` records for real. The fake device feeds Chrome a synthetic tone
+    // instead of a microphone, and granting the permission up front stands in
+    // for the OS dialog — which Playwright cannot drive, and which is therefore
+    // the one part of AC-S2's ten seconds the suite does not measure.
+    launchOptions: {
+      args: [
+        // Synthesise a microphone (a CI box has none) and auto-accept the
+        // capture prompt. `permissions: ['microphone']` alone is not enough:
+        // it satisfies the Permissions API, but `getUserMedia` still has to
+        // find a device to open.
+        '--use-fake-device-for-media-capture',
+        '--use-fake-ui-for-media-stream',
+      ],
+    },
+    permissions: ['microphone'],
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',

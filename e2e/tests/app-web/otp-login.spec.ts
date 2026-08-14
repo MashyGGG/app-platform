@@ -41,10 +41,14 @@ test('a brand-new address signs in with a code alone — no password, no profile
 
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
 
-  await expect(page).toHaveURL(/\/en\/home$/)
+  // AC-S9 names `/today` as the landing page, and the account exists for real:
+  // `/home` renders it from the database on the next request.
+  await expect(page).toHaveURL(/\/en\/today$/)
+  expect(await sessionCookie(context, 'app')).toBeTruthy()
+
+  await page.goto('/en/home')
   await expect(page.getByText(email)).toBeVisible()
   await expect(page.getByText('Active')).toBeVisible()
-  expect(await sessionCookie(context, 'app')).toBeTruthy()
 
   // The account is real and keeps working: sign out, come back with a new code.
   await page.getByRole('button', { name: 'Sign out' }).click()
@@ -55,7 +59,7 @@ test('a brand-new address signs in with a code alone — no password, no profile
   await page.getByRole('button', { name: 'Send code' }).click()
   await expect(page.getByLabel('Code')).toHaveValue(/^\d{6}$/)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
-  await expect(page).toHaveURL(/\/en\/home$/)
+  await expect(page).toHaveURL(/\/en\/today$/)
 })
 
 test('a code is single-use and a wrong one is refused', async () => {
@@ -137,10 +141,10 @@ test('a signed-in visitor is bounced off the sign-in page', async ({ page }) => 
   await page.getByRole('button', { name: 'Send code' }).click()
   await expect(page.getByLabel('Code')).toHaveValue(/^\d{6}$/)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
-  await expect(page).toHaveURL(/\/en\/home$/)
+  await expect(page).toHaveURL(/\/en\/today$/)
 
   // Middleware's AUTH_ONLY list has to know about /auth too, or a signed-in user
   // could sit on a sign-in form and mint a second session for another account.
   await page.goto('/en/auth')
-  await expect(page).toHaveURL(/\/en\/home$/)
+  await expect(page).toHaveURL(/\/en\/today$/)
 })

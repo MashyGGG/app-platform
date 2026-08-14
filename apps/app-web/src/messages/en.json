@@ -77,6 +77,32 @@
     "statusActive": "Active",
     "statusDisabled": "Disabled"
   },
+  "today": {
+    "title": "Daily speaking",
+    "promptLabel": "Today's question",
+    "startRecording": "Start recording",
+    "recording": "Recording",
+    "stopRecording": "I'm done",
+    "keepGoing": "Keep going ({seconds}s)",
+    "elapsed": "{seconds}s",
+    "durationHint": "Speak for {min}-{max} seconds: your view, plus a reason and an example.",
+    "scoring": "Listening to your answer...",
+    "nothingRecorded": "No audio was captured. Check your microphone and try again.",
+    "micDenied": "A microphone is needed to practise. Allow access and tap record again.",
+    "winner": {
+      "A": "Let's make it easier to hear",
+      "B": "Say it in your own words",
+      "C": "Finish the thought"
+    },
+    "coach": {
+      "A": "{count, plural, one {One word} other {# words}} came out unclear. Read them once more, then say your answer again.",
+      "B": "You leaned on the same few words the whole way through. Take this line as a model and go again.",
+      "C_reason": "You gave your view but not the reason behind it. Add one sentence and you're done.",
+      "C_example": "You have a view and a reason. One concrete example and you're done.",
+      "C_more": "Clear, with a reason and an example. One more concrete detail and you're done."
+    },
+    "recorderUnavailable": "This browser could not start recording. Try reloading, or use a different browser."
+  },
   "errors": {
     "rateLimited": "Too many attempts. Please try again later.",
     "validationFailed": "Some fields are invalid. Please check and retry.",
@@ -94,6 +120,10 @@
     "passwordTooWeak": "Password must contain both letters and numbers.",
     "passwordMismatch": "The two passwords do not match.",
     "invalidOtpCode": "The code is 6 digits.",
-    "network": "Network error. Please try again."
+    "network": "Network error. Please try again.",
+    "audioNotWav": "That recording could not be read. Please record again.",
+    "audioWrongFormat": "That recording is in an unsupported format. Please record again.",
+    "audioTooShort": "That was too short. Speak for at least 30 seconds.",
+    "audioTooLong": "That was too long. Keep it under 90 seconds."
   }
 }

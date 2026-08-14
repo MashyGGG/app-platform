@@ -21,6 +21,11 @@ export const RATE_LIMITS = {
   // Not in IMPL §4.5, but a six-digit code without an attempt cap is a 10^6
   // search anyone can finish. Keyed `<ip>:<email>` like login.
   'otp-verify': { limit: 5, window: '15 m', windowSec: 15 * 60 },
+  // Take submissions, keyed by USER id. One session per day needs a handful of
+  // takes at most, so 20/h leaves room for re-records after a failure while
+  // still capping what one account can spend of IMPL §4.4 红线 2 — Azure F0's
+  // 5 audio hours a month, which ~200 takes exhausts for everybody at once.
+  'speaking-submit': { limit: 20, window: '1 h', windowSec: 60 * 60 },
 } as const
 
 export type RateLimitAction = keyof typeof RATE_LIMITS

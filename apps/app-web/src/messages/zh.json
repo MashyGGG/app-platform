@@ -77,6 +77,32 @@
     "statusActive": "正常",
     "statusDisabled": "已禁用"
   },
+  "today": {
+    "title": "每日口语",
+    "promptLabel": "今日一题",
+    "startRecording": "开始录音",
+    "recording": "录音中",
+    "stopRecording": "我说完了",
+    "keepGoing": "再说一会儿（{seconds} 秒）",
+    "elapsed": "{seconds} 秒",
+    "durationHint": "说 {min}-{max} 秒：说出你的看法，再给一个理由和一个例子。",
+    "scoring": "正在听你说的…",
+    "nothingRecorded": "没有采到声音。检查一下麦克风再试一次。",
+    "micDenied": "需要麦克风才能练。允许后再点一下录音。",
+    "winner": {
+      "A": "先把话说清",
+      "B": "用你自己的话说",
+      "C": "把话说完整"
+    },
+    "coach": {
+      "A": "有 {count} 个词听不太清。跟着读一遍，再把刚才的话说一次。",
+      "B": "一直在用同几个词。照着这句换个说法，再说一遍。",
+      "C_reason": "看法说了，理由还没说。补一句就收工。",
+      "C_example": "看法和理由都有了。再举一个具体例子就收工。",
+      "C_more": "说得清楚，理由和例子都有了。再补一个具体细节就收工。"
+    },
+    "recorderUnavailable": "这个浏览器没能开始录音。刷新一下，或换一个浏览器试试。"
+  },
   "errors": {
     "rateLimited": "操作过于频繁，请稍后再试。",
     "validationFailed": "输入内容不合法，请检查后重试。",
@@ -94,6 +120,10 @@
     "passwordTooWeak": "密码需同时包含字母和数字。",
     "passwordMismatch": "两次输入的密码不一致。",
     "invalidOtpCode": "验证码为 6 位数字。",
-    "network": "网络异常，请稍后再试。"
+    "network": "网络异常，请稍后再试。",
+    "audioNotWav": "这段录音读不出来，请重新录一次。",
+    "audioWrongFormat": "录音格式不支持，请重新录一次。",
+    "audioTooShort": "说得太短了，至少说满 30 秒。",
+    "audioTooLong": "说得太长了，控制在 90 秒以内。"
   }
 }

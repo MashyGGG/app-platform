@@ -238,6 +238,11 @@ model SpeakingSession {
   id            String                @id @default(cuid())
   userId        String
   promptId      String
+  /// `YYYY-MM-DD` in the user's local day (see packages/shared rotation.ts).
+  /// Paired with the unique below, this is what makes AC-I2 — "同一用户同一自然日
+  /// 多次请求 /today 返回同一 session" — a database invariant rather than a
+  /// query convention that two concurrent requests can defeat.
+  dateKey       String                @db.VarChar(10)
   status        SpeakingSessionStatus @default(NOT_STARTED)
   audioKey      String?
   durationMs    Int?
@@ -259,6 +264,7 @@ model SpeakingSession {
   prompt          SpeakingPrompt           @relation(fields: [promptId], references: [id])
   dailyCompletion SpeakingDailyCompletion?
 
+  @@unique([userId, dateKey])
   @@index([userId, startedAt])
   @@index([promptId])
   @@index([status])

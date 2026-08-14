@@ -3,6 +3,7 @@ import type { ZodTypeAny } from 'zod'
 import { API_ERROR, type ApiErrorCode, errorBody } from '@app/shared/errors'
 import { registerSchema, zodDetails } from '@app/shared/validation'
 import { otpVerifySchema } from '@app/shared/speaking/otp'
+import { COACH_LINE_KEYS } from '@app/shared/speaking'
 import en from './en.json'
 import zh from './zh.json'
 
@@ -72,6 +73,19 @@ const VALIDATION_KEYS = [
   ]),
 ].filter((key) => key.startsWith('errors.'))
 
+/**
+ * The upload gate's four rejection reasons. They reach the client inside
+ * `details.audio`, which no schema emits, so they are the one list here that
+ * cannot be collected by failing something — keep it in step with
+ * `REJECTION_KEY` in the audio route.
+ */
+const AUDIO_KEYS = [
+  'errors.audioNotWav',
+  'errors.audioWrongFormat',
+  'errors.audioTooShort',
+  'errors.audioTooLong',
+]
+
 describe('app-web messages', () => {
   it('collected the keys it is supposed to be checking', () => {
     // Guards the guard: if `flatten` or the collectors silently returned nothing,
@@ -90,12 +104,27 @@ describe('app-web messages', () => {
 
   it.each(Object.keys(LOCALES))('translates every server error key in %s', (locale) => {
     const messages = LOCALES[locale as keyof typeof LOCALES]
-    for (const key of [...ENVELOPE_KEYS, ...VALIDATION_KEYS]) {
+    for (const key of [...ENVELOPE_KEYS, ...VALIDATION_KEYS, ...AUDIO_KEYS]) {
       const value = lookup(messages, key)
       expect(typeof value, `${locale} is missing ${key}`).toBe('string')
       expect(String(value).trim(), `${locale}.${key} is empty`).not.toBe('')
     }
   })
+
+  it.each(Object.keys(LOCALES))(
+    'translates every coach line the winner rule can pick in %s',
+    (locale) => {
+      // Same gap as the error keys, one layer up: `pickWinner` returns a key, the
+      // route ships it, and nothing type-checks that a sentence exists behind it.
+      // A missing one renders the literal `today.coach.B` as the coaching line —
+      // the single sentence AC-S3 says the student gets.
+      const messages = LOCALES[locale as keyof typeof LOCALES]
+      expect(COACH_LINE_KEYS.length).toBeGreaterThanOrEqual(4)
+      for (const key of COACH_LINE_KEYS) {
+        expect(typeof lookup(messages, key), `${locale} is missing ${key}`).toBe('string')
+      }
+    },
+  )
 
   it('keeps en and zh at exactly the same set of keys', () => {
     // A key present in one locale only is a half-translated release: it renders

@@ -1,6 +1,7 @@
 import { prisma } from '@app/db'
 import { API_ERROR, clientIp, hashPassword, registerSchema, zodDetails } from '@app/shared'
 import { signIn } from '@/auth'
+import { POST_AUTH_LANDING } from '@/lib/routes'
 import { enforceRateLimit, internalError, jsonError, jsonOk, readJson } from '@/lib/api'
 
 export const runtime = 'nodejs'
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
 
     await signIn('credentials', { redirect: false, email, password })
 
-    return jsonOk({ ok: true, redirectTo: `/${locale ?? 'zh'}/home` })
+    return jsonOk({ ok: true, redirectTo: `/${locale ?? 'zh'}${POST_AUTH_LANDING}` })
   } catch (error) {
     return internalError(error)
   }
