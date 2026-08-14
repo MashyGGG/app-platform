@@ -1,0 +1,824 @@
+{
+  "version": 1,
+  "prompts": [
+    {
+      "slug": "weekend-plan",
+      "text": "What are you planning to do this weekend, and why did you choose it?",
+      "warmupSentence": "This weekend I want to try something a little different.",
+      "warmupAudioKey": "seed/prompts/weekend-plan/warmup.mp3",
+      "modelAudioKey": "seed/prompts/weekend-plan/model.mp3",
+      "checklist": ["说出你的打算", "给一个理由", "举一个具体例子"],
+      "sort": 1,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Another way to say it: my plan for Saturday is simple, and here is what is behind it.",
+          "audioKey": "seed/prompts/weekend-plan/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "weekend",
+          "ipa": "/ˈwiːkend/",
+          "phonemes": ["w", "iː", "k", "e", "n", "d"],
+          "audioKey": "seed/words/weekend.mp3",
+          "gloss": "周末"
+        },
+        {
+          "lemma": "plan",
+          "ipa": "/plæn/",
+          "phonemes": ["p", "l", "æ", "n"],
+          "audioKey": "seed/words/plan.mp3",
+          "gloss": "计划"
+        },
+        {
+          "lemma": "because",
+          "ipa": "/bɪˈkɒz/",
+          "phonemes": ["b", "ɪ", "k", "ɒ", "z"],
+          "audioKey": "seed/words/because.mp3",
+          "gloss": "因为"
+        }
+      ]
+    },
+    {
+      "slug": "favourite-food",
+      "text": "What is one dish you would cook for a friend from another country, and why that one?",
+      "warmupSentence": "The dish I would cook is easy to make but hard to forget.",
+      "warmupAudioKey": "seed/prompts/favourite-food/warmup.mp3",
+      "modelAudioKey": "seed/prompts/favourite-food/model.mp3",
+      "checklist": ["说出这道菜", "给一个理由", "描述一次真实的场合"],
+      "sort": 2,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Put differently: if a friend visited tomorrow, this is what I would put on the table.",
+          "audioKey": "seed/prompts/favourite-food/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "vegetable",
+          "ipa": "/ˈvedʒtəbl/",
+          "phonemes": ["v", "e", "dʒ", "t", "ə", "b", "l"],
+          "audioKey": "seed/words/vegetable.mp3",
+          "gloss": "蔬菜"
+        },
+        {
+          "lemma": "delicious",
+          "ipa": "/dɪˈlɪʃəs/",
+          "phonemes": ["d", "ɪ", "l", "ɪ", "ʃ", "ə", "s"],
+          "audioKey": "seed/words/delicious.mp3",
+          "gloss": "美味的"
+        },
+        {
+          "lemma": "recipe",
+          "ipa": "/ˈresəpi/",
+          "phonemes": ["r", "e", "s", "ə", "p", "i"],
+          "audioKey": "seed/words/recipe.mp3",
+          "gloss": "食谱"
+        }
+      ]
+    },
+    {
+      "slug": "morning-routine",
+      "text": "Describe your morning routine. Which part would you change, and why?",
+      "warmupSentence": "My morning starts earlier than I would like.",
+      "warmupAudioKey": "seed/prompts/morning-routine/warmup.mp3",
+      "modelAudioKey": "seed/prompts/morning-routine/model.mp3",
+      "checklist": ["描述你的早晨", "说出想改的一件事", "给一个理由"],
+      "sort": 3,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "In other words: here is how my day begins, and the one habit I would drop.",
+          "audioKey": "seed/prompts/morning-routine/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "routine",
+          "ipa": "/ruːˈtiːn/",
+          "phonemes": ["r", "uː", "t", "iː", "n"],
+          "audioKey": "seed/words/routine.mp3",
+          "gloss": "日常安排"
+        },
+        {
+          "lemma": "usually",
+          "ipa": "/ˈjuːʒuəli/",
+          "phonemes": ["j", "uː", "ʒ", "u", "ə", "l", "i"],
+          "audioKey": "seed/words/usually.mp3",
+          "gloss": "通常"
+        },
+        {
+          "lemma": "breakfast",
+          "ipa": "/ˈbrekfəst/",
+          "phonemes": ["b", "r", "e", "k", "f", "ə", "s", "t"],
+          "audioKey": "seed/words/breakfast.mp3",
+          "gloss": "早餐"
+        }
+      ]
+    },
+    {
+      "slug": "city-or-countryside",
+      "text": "Would you rather live in a big city or in the countryside? Give your reason.",
+      "warmupSentence": "I would pick one of them without thinking twice.",
+      "warmupAudioKey": "seed/prompts/city-or-countryside/warmup.mp3",
+      "modelAudioKey": "seed/prompts/city-or-countryside/model.mp3",
+      "checklist": ["表明立场", "给一个理由", "承认对方的一个好处"],
+      "sort": 4,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Another way in: which one fits the life I actually want, and why the other does not?",
+          "audioKey": "seed/prompts/city-or-countryside/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "countryside",
+          "ipa": "/ˈkʌntrisaɪd/",
+          "phonemes": ["k", "ʌ", "n", "t", "r", "i", "s", "aɪ", "d"],
+          "audioKey": "seed/words/countryside.mp3",
+          "gloss": "乡村"
+        },
+        {
+          "lemma": "crowded",
+          "ipa": "/ˈkraʊdɪd/",
+          "phonemes": ["k", "r", "aʊ", "d", "ɪ", "d"],
+          "audioKey": "seed/words/crowded.mp3",
+          "gloss": "拥挤的"
+        },
+        {
+          "lemma": "quiet",
+          "ipa": "/ˈkwaɪət/",
+          "phonemes": ["k", "w", "aɪ", "ə", "t"],
+          "audioKey": "seed/words/quiet.mp3",
+          "gloss": "安静的"
+        }
+      ]
+    },
+    {
+      "slug": "phone-habit",
+      "text": "How much time do you spend on your phone each day? Is that a problem? Why?",
+      "warmupSentence": "I check my phone more often than I admit.",
+      "warmupAudioKey": "seed/prompts/phone-habit/warmup.mp3",
+      "modelAudioKey": "seed/prompts/phone-habit/model.mp3",
+      "checklist": ["给出你的估计", "表明是否算问题", "给一个理由"],
+      "sort": 5,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Said differently: where does my screen time actually go, and does it bother me?",
+          "audioKey": "seed/prompts/phone-habit/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "screen",
+          "ipa": "/skriːn/",
+          "phonemes": ["s", "k", "r", "iː", "n"],
+          "audioKey": "seed/words/screen.mp3",
+          "gloss": "屏幕"
+        },
+        {
+          "lemma": "distraction",
+          "ipa": "/dɪˈstrækʃn/",
+          "phonemes": ["d", "ɪ", "s", "t", "r", "æ", "k", "ʃ", "n"],
+          "audioKey": "seed/words/distraction.mp3",
+          "gloss": "分心的事"
+        },
+        {
+          "lemma": "habit",
+          "ipa": "/ˈhæbɪt/",
+          "phonemes": ["h", "æ", "b", "ɪ", "t"],
+          "audioKey": "seed/words/habit.mp3",
+          "gloss": "习惯"
+        }
+      ]
+    },
+    {
+      "slug": "best-teacher",
+      "text": "Think of a teacher you remember. What did they do that stayed with you?",
+      "warmupSentence": "One teacher changed how I look at my own mistakes.",
+      "warmupAudioKey": "seed/prompts/best-teacher/warmup.mp3",
+      "modelAudioKey": "seed/prompts/best-teacher/model.mp3",
+      "checklist": ["说出这个人", "说出他做了什么", "说出对你的影响"],
+      "sort": 6,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "To put it another way: what exactly did that teacher do, and what changed for me?",
+          "audioKey": "seed/prompts/best-teacher/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "patient",
+          "ipa": "/ˈpeɪʃnt/",
+          "phonemes": ["p", "eɪ", "ʃ", "n", "t"],
+          "audioKey": "seed/words/patient.mp3",
+          "gloss": "有耐心的"
+        },
+        {
+          "lemma": "encourage",
+          "ipa": "/ɪnˈkʌrɪdʒ/",
+          "phonemes": ["ɪ", "n", "k", "ʌ", "r", "ɪ", "dʒ"],
+          "audioKey": "seed/words/encourage.mp3",
+          "gloss": "鼓励"
+        },
+        {
+          "lemma": "mistake",
+          "ipa": "/mɪˈsteɪk/",
+          "phonemes": ["m", "ɪ", "s", "t", "eɪ", "k"],
+          "audioKey": "seed/words/mistake.mp3",
+          "gloss": "错误"
+        }
+      ]
+    },
+    {
+      "slug": "learning-english",
+      "text": "What is the hardest part of learning English for you, and how do you deal with it?",
+      "warmupSentence": "The hardest part for me is not the words.",
+      "warmupAudioKey": "seed/prompts/learning-english/warmup.mp3",
+      "modelAudioKey": "seed/prompts/learning-english/model.mp3",
+      "checklist": ["说出最难的一点", "说出你的应对方法", "举一个例子"],
+      "sort": 7,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Another angle: which part slows me down most, and what do I actually do about it?",
+          "audioKey": "seed/prompts/learning-english/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "pronunciation",
+          "ipa": "/prəˌnʌnsiˈeɪʃn/",
+          "phonemes": ["p", "r", "ə", "n", "ʌ", "n", "s", "i", "eɪ", "ʃ", "n"],
+          "audioKey": "seed/words/pronunciation.mp3",
+          "gloss": "发音"
+        },
+        {
+          "lemma": "vocabulary",
+          "ipa": "/vəˈkæbjələri/",
+          "phonemes": ["v", "ə", "k", "æ", "b", "j", "ə", "l", "ə", "r", "i"],
+          "audioKey": "seed/words/vocabulary.mp3",
+          "gloss": "词汇"
+        },
+        {
+          "lemma": "practise",
+          "ipa": "/ˈpræktɪs/",
+          "phonemes": ["p", "r", "æ", "k", "t", "ɪ", "s"],
+          "audioKey": "seed/words/practise.mp3",
+          "gloss": "练习"
+        }
+      ]
+    },
+    {
+      "slug": "public-transport",
+      "text": "How do you usually get around your city? Would you change it if you could?",
+      "warmupSentence": "Most days I take the same route without thinking.",
+      "warmupAudioKey": "seed/prompts/public-transport/warmup.mp3",
+      "modelAudioKey": "seed/prompts/public-transport/model.mp3",
+      "checklist": ["说出你的出行方式", "说出想不想改变", "给一个理由"],
+      "sort": 8,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "In other words: what gets me from home to school, and is it the best option?",
+          "audioKey": "seed/prompts/public-transport/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "subway",
+          "ipa": "/ˈsʌbweɪ/",
+          "phonemes": ["s", "ʌ", "b", "w", "eɪ"],
+          "audioKey": "seed/words/subway.mp3",
+          "gloss": "地铁"
+        },
+        {
+          "lemma": "traffic",
+          "ipa": "/ˈtræfɪk/",
+          "phonemes": ["t", "r", "æ", "f", "ɪ", "k"],
+          "audioKey": "seed/words/traffic.mp3",
+          "gloss": "交通"
+        },
+        {
+          "lemma": "bicycle",
+          "ipa": "/ˈbaɪsɪkl/",
+          "phonemes": ["b", "aɪ", "s", "ɪ", "k", "l"],
+          "audioKey": "seed/words/bicycle.mp3",
+          "gloss": "自行车"
+        }
+      ]
+    },
+    {
+      "slug": "a-good-friend",
+      "text": "What makes someone a good friend? Describe one person who fits your answer.",
+      "warmupSentence": "A good friend tells me the part I do not want to hear.",
+      "warmupAudioKey": "seed/prompts/a-good-friend/warmup.mp3",
+      "modelAudioKey": "seed/prompts/a-good-friend/model.mp3",
+      "checklist": ["给出你的标准", "描述一个人", "举一件具体的事"],
+      "sort": 9,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Another way to say it: what do I count on a friend for, and who does that for me?",
+          "audioKey": "seed/prompts/a-good-friend/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "honest",
+          "ipa": "/ˈɒnɪst/",
+          "phonemes": ["ɒ", "n", "ɪ", "s", "t"],
+          "audioKey": "seed/words/honest.mp3",
+          "gloss": "诚实的"
+        },
+        {
+          "lemma": "loyal",
+          "ipa": "/ˈlɔɪəl/",
+          "phonemes": ["l", "ɔɪ", "ə", "l"],
+          "audioKey": "seed/words/loyal.mp3",
+          "gloss": "忠诚的"
+        },
+        {
+          "lemma": "argue",
+          "ipa": "/ˈɑːɡjuː/",
+          "phonemes": ["ɑː", "ɡ", "j", "uː"],
+          "audioKey": "seed/words/argue.mp3",
+          "gloss": "争论"
+        }
+      ]
+    },
+    {
+      "slug": "online-classes",
+      "text": "Do online classes work as well as classes in a room? Give one reason.",
+      "warmupSentence": "Online classes save time, but something is missing.",
+      "warmupAudioKey": "seed/prompts/online-classes/warmup.mp3",
+      "modelAudioKey": "seed/prompts/online-classes/model.mp3",
+      "checklist": ["表明立场", "给一个理由", "承认对方的一个好处"],
+      "sort": 10,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Put another way: what do I gain online, and what do I only get in a real classroom?",
+          "audioKey": "seed/prompts/online-classes/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "attention",
+          "ipa": "/əˈtenʃn/",
+          "phonemes": ["ə", "t", "e", "n", "ʃ", "n"],
+          "audioKey": "seed/words/attention.mp3",
+          "gloss": "注意力"
+        },
+        {
+          "lemma": "classroom",
+          "ipa": "/ˈklɑːsruːm/",
+          "phonemes": ["k", "l", "ɑː", "s", "r", "uː", "m"],
+          "audioKey": "seed/words/classroom.mp3",
+          "gloss": "教室"
+        },
+        {
+          "lemma": "discussion",
+          "ipa": "/dɪˈskʌʃn/",
+          "phonemes": ["d", "ɪ", "s", "k", "ʌ", "ʃ", "n"],
+          "audioKey": "seed/words/discussion.mp3",
+          "gloss": "讨论"
+        }
+      ]
+    },
+    {
+      "slug": "a-place-to-visit",
+      "text": "If you could travel anywhere next month, where would you go, and why there?",
+      "warmupSentence": "There is one place I keep putting off.",
+      "warmupAudioKey": "seed/prompts/a-place-to-visit/warmup.mp3",
+      "modelAudioKey": "seed/prompts/a-place-to-visit/model.mp3",
+      "checklist": ["说出地点", "给一个理由", "说出你到那里会做什么"],
+      "sort": 11,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "In other words: which place is at the top of my list, and what pulls me there?",
+          "audioKey": "seed/prompts/a-place-to-visit/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "travel",
+          "ipa": "/ˈtrævl/",
+          "phonemes": ["t", "r", "æ", "v", "l"],
+          "audioKey": "seed/words/travel.mp3",
+          "gloss": "旅行"
+        },
+        {
+          "lemma": "culture",
+          "ipa": "/ˈkʌltʃə/",
+          "phonemes": ["k", "ʌ", "l", "tʃ", "ə"],
+          "audioKey": "seed/words/culture.mp3",
+          "gloss": "文化"
+        },
+        {
+          "lemma": "island",
+          "ipa": "/ˈaɪlənd/",
+          "phonemes": ["aɪ", "l", "ə", "n", "d"],
+          "audioKey": "seed/words/island.mp3",
+          "gloss": "岛屿"
+        }
+      ]
+    },
+    {
+      "slug": "part-time-job",
+      "text": "Should students take a part-time job while studying? What do you think, and why?",
+      "warmupSentence": "A part-time job teaches things a classroom cannot.",
+      "warmupAudioKey": "seed/prompts/part-time-job/warmup.mp3",
+      "modelAudioKey": "seed/prompts/part-time-job/model.mp3",
+      "checklist": ["表明立场", "给一个理由", "说出一个风险"],
+      "sort": 12,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Said another way: is the money and experience worth the hours it takes?",
+          "audioKey": "seed/prompts/part-time-job/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "experience",
+          "ipa": "/ɪkˈspɪəriəns/",
+          "phonemes": ["ɪ", "k", "s", "p", "ɪə", "r", "i", "ə", "n", "s"],
+          "audioKey": "seed/words/experience.mp3",
+          "gloss": "经验"
+        },
+        {
+          "lemma": "salary",
+          "ipa": "/ˈsæləri/",
+          "phonemes": ["s", "æ", "l", "ə", "r", "i"],
+          "audioKey": "seed/words/salary.mp3",
+          "gloss": "薪水"
+        },
+        {
+          "lemma": "schedule",
+          "ipa": "/ˈʃedjuːl/",
+          "phonemes": ["ʃ", "e", "d", "j", "uː", "l"],
+          "audioKey": "seed/words/schedule.mp3",
+          "gloss": "日程"
+        }
+      ]
+    },
+    {
+      "slug": "sport-or-exercise",
+      "text": "What do you do to stay active? If nothing, what stops you?",
+      "warmupSentence": "I move less than I did two years ago.",
+      "warmupAudioKey": "seed/prompts/sport-or-exercise/warmup.mp3",
+      "modelAudioKey": "seed/prompts/sport-or-exercise/model.mp3",
+      "checklist": ["说出你的运动或障碍", "给一个理由", "举一个最近的例子"],
+      "sort": 13,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Another way in: when did I last exercise, and what made that day different?",
+          "audioKey": "seed/prompts/sport-or-exercise/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "exercise",
+          "ipa": "/ˈeksəsaɪz/",
+          "phonemes": ["e", "k", "s", "ə", "s", "aɪ", "z"],
+          "audioKey": "seed/words/exercise.mp3",
+          "gloss": "锻炼"
+        },
+        {
+          "lemma": "muscle",
+          "ipa": "/ˈmʌsl/",
+          "phonemes": ["m", "ʌ", "s", "l"],
+          "audioKey": "seed/words/muscle.mp3",
+          "gloss": "肌肉"
+        },
+        {
+          "lemma": "energy",
+          "ipa": "/ˈenədʒi/",
+          "phonemes": ["e", "n", "ə", "dʒ", "i"],
+          "audioKey": "seed/words/energy.mp3",
+          "gloss": "精力"
+        }
+      ]
+    },
+    {
+      "slug": "music-you-play",
+      "text": "What music do you listen to while working or studying, and does it help?",
+      "warmupSentence": "The music I choose depends on what I am avoiding.",
+      "warmupAudioKey": "seed/prompts/music-you-play/warmup.mp3",
+      "modelAudioKey": "seed/prompts/music-you-play/model.mp3",
+      "checklist": ["说出你听什么", "说出有没有帮助", "给一个理由"],
+      "sort": 14,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Put differently: does music help me focus, or is it just company?",
+          "audioKey": "seed/prompts/music-you-play/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "rhythm",
+          "ipa": "/ˈrɪðəm/",
+          "phonemes": ["r", "ɪ", "ð", "ə", "m"],
+          "audioKey": "seed/words/rhythm.mp3",
+          "gloss": "节奏"
+        },
+        {
+          "lemma": "lyrics",
+          "ipa": "/ˈlɪrɪks/",
+          "phonemes": ["l", "ɪ", "r", "ɪ", "k", "s"],
+          "audioKey": "seed/words/lyrics.mp3",
+          "gloss": "歌词"
+        },
+        {
+          "lemma": "focus",
+          "ipa": "/ˈfəʊkəs/",
+          "phonemes": ["f", "əʊ", "k", "ə", "s"],
+          "audioKey": "seed/words/focus.mp3",
+          "gloss": "专注"
+        }
+      ]
+    },
+    {
+      "slug": "money-and-saving",
+      "text": "Do you save money or spend it as it comes? Explain your approach.",
+      "warmupSentence": "I am better at planning money than at keeping it.",
+      "warmupAudioKey": "seed/prompts/money-and-saving/warmup.mp3",
+      "modelAudioKey": "seed/prompts/money-and-saving/model.mp3",
+      "checklist": ["说出你的做法", "给一个理由", "举一个具体例子"],
+      "sort": 15,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Another way to say it: what happens to my money in a normal month?",
+          "audioKey": "seed/prompts/money-and-saving/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "budget",
+          "ipa": "/ˈbʌdʒɪt/",
+          "phonemes": ["b", "ʌ", "dʒ", "ɪ", "t"],
+          "audioKey": "seed/words/budget.mp3",
+          "gloss": "预算"
+        },
+        {
+          "lemma": "expensive",
+          "ipa": "/ɪkˈspensɪv/",
+          "phonemes": ["ɪ", "k", "s", "p", "e", "n", "s", "ɪ", "v"],
+          "audioKey": "seed/words/expensive.mp3",
+          "gloss": "昂贵的"
+        },
+        {
+          "lemma": "afford",
+          "ipa": "/əˈfɔːd/",
+          "phonemes": ["ə", "f", "ɔː", "d"],
+          "audioKey": "seed/words/afford.mp3",
+          "gloss": "负担得起"
+        }
+      ]
+    },
+    {
+      "slug": "a-difficult-decision",
+      "text": "Tell me about a decision that was hard to make. How did you decide?",
+      "warmupSentence": "I put off that decision for weeks.",
+      "warmupAudioKey": "seed/prompts/a-difficult-decision/warmup.mp3",
+      "modelAudioKey": "seed/prompts/a-difficult-decision/model.mp3",
+      "checklist": ["说出这个决定", "说出你怎么权衡", "说出结果"],
+      "sort": 16,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "In other words: what were the two options, and what tipped the balance?",
+          "audioKey": "seed/prompts/a-difficult-decision/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "decision",
+          "ipa": "/dɪˈsɪʒn/",
+          "phonemes": ["d", "ɪ", "s", "ɪ", "ʒ", "n"],
+          "audioKey": "seed/words/decision.mp3",
+          "gloss": "决定"
+        },
+        {
+          "lemma": "regret",
+          "ipa": "/rɪˈɡret/",
+          "phonemes": ["r", "ɪ", "ɡ", "r", "e", "t"],
+          "audioKey": "seed/words/regret.mp3",
+          "gloss": "后悔"
+        },
+        {
+          "lemma": "choice",
+          "ipa": "/tʃɔɪs/",
+          "phonemes": ["tʃ", "ɔɪ", "s"],
+          "audioKey": "seed/words/choice.mp3",
+          "gloss": "选择"
+        }
+      ]
+    },
+    {
+      "slug": "reading-books",
+      "text": "Do people still need to read books? Say what you think and why.",
+      "warmupSentence": "I read less than I claim to.",
+      "warmupAudioKey": "seed/prompts/reading-books/warmup.mp3",
+      "modelAudioKey": "seed/prompts/reading-books/model.mp3",
+      "checklist": ["表明立场", "给一个理由", "举一本书或一次经历"],
+      "sort": 17,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Another angle: what does a book give me that a short video does not?",
+          "audioKey": "seed/prompts/reading-books/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "chapter",
+          "ipa": "/ˈtʃæptə/",
+          "phonemes": ["tʃ", "æ", "p", "t", "ə"],
+          "audioKey": "seed/words/chapter.mp3",
+          "gloss": "章节"
+        },
+        {
+          "lemma": "author",
+          "ipa": "/ˈɔːθə/",
+          "phonemes": ["ɔː", "θ", "ə"],
+          "audioKey": "seed/words/author.mp3",
+          "gloss": "作者"
+        },
+        {
+          "lemma": "imagine",
+          "ipa": "/ɪˈmædʒɪn/",
+          "phonemes": ["ɪ", "m", "æ", "dʒ", "ɪ", "n"],
+          "audioKey": "seed/words/imagine.mp3",
+          "gloss": "想象"
+        }
+      ]
+    },
+    {
+      "slug": "weather-and-mood",
+      "text": "Does the weather change how you feel or what you do? Give an example.",
+      "warmupSentence": "A grey morning slows everything down for me.",
+      "warmupAudioKey": "seed/prompts/weather-and-mood/warmup.mp3",
+      "modelAudioKey": "seed/prompts/weather-and-mood/model.mp3",
+      "checklist": ["表明影响或不影响", "给一个理由", "举一个具体的日子"],
+      "sort": 18,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Put differently: on a rainy day, what do I do differently?",
+          "audioKey": "seed/prompts/weather-and-mood/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "weather",
+          "ipa": "/ˈweðə/",
+          "phonemes": ["w", "e", "ð", "ə"],
+          "audioKey": "seed/words/weather.mp3",
+          "gloss": "天气"
+        },
+        {
+          "lemma": "thunder",
+          "ipa": "/ˈθʌndə/",
+          "phonemes": ["θ", "ʌ", "n", "d", "ə"],
+          "audioKey": "seed/words/thunder.mp3",
+          "gloss": "雷"
+        },
+        {
+          "lemma": "comfortable",
+          "ipa": "/ˈkʌmftəbl/",
+          "phonemes": ["k", "ʌ", "m", "f", "t", "ə", "b", "l"],
+          "audioKey": "seed/words/comfortable.mp3",
+          "gloss": "舒适的"
+        }
+      ]
+    },
+    {
+      "slug": "technology-at-home",
+      "text": "Which device at home could you not give up, and what would change without it?",
+      "warmupSentence": "One device in my home is doing more work than the rest.",
+      "warmupAudioKey": "seed/prompts/technology-at-home/warmup.mp3",
+      "modelAudioKey": "seed/prompts/technology-at-home/model.mp3",
+      "checklist": ["说出这个设备", "给一个理由", "说出没有它会怎样"],
+      "sort": 19,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "In other words: if it broke tomorrow, what part of my day would fall apart?",
+          "audioKey": "seed/prompts/technology-at-home/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "machine",
+          "ipa": "/məˈʃiːn/",
+          "phonemes": ["m", "ə", "ʃ", "iː", "n"],
+          "audioKey": "seed/words/machine.mp3",
+          "gloss": "机器"
+        },
+        {
+          "lemma": "battery",
+          "ipa": "/ˈbætri/",
+          "phonemes": ["b", "æ", "t", "r", "i"],
+          "audioKey": "seed/words/battery.mp3",
+          "gloss": "电池"
+        },
+        {
+          "lemma": "convenient",
+          "ipa": "/kənˈviːniənt/",
+          "phonemes": ["k", "ə", "n", "v", "iː", "n", "i", "ə", "n", "t"],
+          "audioKey": "seed/words/convenient.mp3",
+          "gloss": "方便的"
+        }
+      ]
+    },
+    {
+      "slug": "helping-others",
+      "text": "Describe a time you helped someone, or someone helped you. What happened?",
+      "warmupSentence": "Someone helped me once without being asked.",
+      "warmupAudioKey": "seed/prompts/helping-others/warmup.mp3",
+      "modelAudioKey": "seed/prompts/helping-others/model.mp3",
+      "checklist": ["说出这件事", "说出为什么记得", "说出结果"],
+      "sort": 20,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Another way to say it: what did the help actually look like, and why did it matter?",
+          "audioKey": "seed/prompts/helping-others/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "volunteer",
+          "ipa": "/ˌvɒlənˈtɪə/",
+          "phonemes": ["v", "ɒ", "l", "ə", "n", "t", "ɪə"],
+          "audioKey": "seed/words/volunteer.mp3",
+          "gloss": "志愿者"
+        },
+        {
+          "lemma": "neighbour",
+          "ipa": "/ˈneɪbə/",
+          "phonemes": ["n", "eɪ", "b", "ə"],
+          "audioKey": "seed/words/neighbour.mp3",
+          "gloss": "邻居"
+        },
+        {
+          "lemma": "grateful",
+          "ipa": "/ˈɡreɪtfl/",
+          "phonemes": ["ɡ", "r", "eɪ", "t", "f", "l"],
+          "audioKey": "seed/words/grateful.mp3",
+          "gloss": "感激的"
+        }
+      ]
+    },
+    {
+      "slug": "future-five-years",
+      "text": "Where do you want to be in five years? Name one step you can take this year.",
+      "warmupSentence": "Five years sounds far away until I count the steps.",
+      "warmupAudioKey": "seed/prompts/future-five-years/warmup.mp3",
+      "modelAudioKey": "seed/prompts/future-five-years/model.mp3",
+      "checklist": ["说出目标", "给一个理由", "说出今年的一步"],
+      "sort": 21,
+      "isActive": true,
+      "paraphrases": [
+        {
+          "text": "Put another way: what do I want to be true in five years, and what starts it?",
+          "audioKey": "seed/prompts/future-five-years/para-1.mp3"
+        }
+      ],
+      "words": [
+        {
+          "lemma": "future",
+          "ipa": "/ˈfjuːtʃə/",
+          "phonemes": ["f", "j", "uː", "tʃ", "ə"],
+          "audioKey": "seed/words/future.mp3",
+          "gloss": "未来"
+        },
+        {
+          "lemma": "career",
+          "ipa": "/kəˈrɪə/",
+          "phonemes": ["k", "ə", "r", "ɪə"],
+          "audioKey": "seed/words/career.mp3",
+          "gloss": "职业"
+        },
+        {
+          "lemma": "achieve",
+          "ipa": "/əˈtʃiːv/",
+          "phonemes": ["ə", "tʃ", "iː", "v"],
+          "audioKey": "seed/words/achieve.mp3",
+          "gloss": "实现"
+        }
+      ]
+    }
+  ]
+}

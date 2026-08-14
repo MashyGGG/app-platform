@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./audit": "./src/audit.ts",
     "./errors": "./src/errors.ts",
-    "./validation": "./src/validation.ts"
+    "./validation": "./src/validation.ts",
+    "./speaking": "./src/speaking/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

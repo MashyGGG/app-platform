@@ -27,6 +27,8 @@
     "db:deploy": "pnpm --filter @app/db run migrate:deploy",
     "db:seed": "pnpm --filter @app/db run seed",
     "db:validate": "pnpm --filter @app/db run validate",
+    "speaking:import": "pnpm --filter @app/db run speaking:import",
+    "speaking:seed": "pnpm --filter @app/db run speaking:import prisma/content/speaking-prompts.seed.json",
     "prepare": "husky"
   },
   "devDependencies": {
