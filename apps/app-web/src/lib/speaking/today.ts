@@ -9,7 +9,7 @@ import {
   type RetryItem,
   type WinnerResult,
 } from '@app/shared/speaking'
-import { audioLimits } from './config'
+import { audioLimits, retryAudioLimits } from './config'
 import { audioUrl } from './audio-store'
 
 /**
@@ -50,7 +50,13 @@ export interface TodayView {
   dateKey: string
   prompt: TodayPromptView
   session: TodaySessionView
-  limits: { minDurationMs: number; maxDurationMs: number; sampleRate: number }
+  limits: {
+    minDurationMs: number
+    maxDurationMs: number
+    /** The retry take's own floor — see `retryAudioLimits`. */
+    retryMinDurationMs: number
+    sampleRate: number
+  }
 }
 
 /** Persisted in `SpeakingSession.winnerPayload` — what P3 actually rendered. */
@@ -130,7 +136,11 @@ function toView(row: SessionRow, dateKey: string): TodayView {
       retryState: row.retryState,
       degradedFlag: row.degradedFlag,
     },
-    limits: { ...limits, sampleRate: 16_000 },
+    limits: {
+      ...limits,
+      retryMinDurationMs: retryAudioLimits().minDurationMs,
+      sampleRate: 16_000,
+    },
   }
 }
 

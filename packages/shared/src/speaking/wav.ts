@@ -130,6 +130,25 @@ export function checkAudio(bytes: Uint8Array, limits: AudioLimits): AudioCheck {
   return { ok: true, info }
 }
 
+/**
+ * The i18n key the client shows for each way a take can be rejected.
+ *
+ * Here rather than in the route because two endpoints now share the gate (the
+ * main take and the retry, AC-S4) and because these keys are emitted by a
+ * lookup, not by a schema — nothing else can collect them for the message
+ * contract test, so the list has to be exported from somewhere pure.
+ */
+export const AUDIO_REJECTION_KEYS = {
+  not_wav: 'errors.audioNotWav',
+  wrong_format: 'errors.audioWrongFormat',
+  too_short: 'errors.audioTooShort',
+  too_long: 'errors.audioTooLong',
+} as const satisfies Record<AudioRejection['reason'], string>
+
+export function audioRejectionKey(reason: AudioRejection['reason']): string {
+  return AUDIO_REJECTION_KEYS[reason]
+}
+
 /** Wraps 16-bit PCM frames in a canonical 44-byte RIFF header. */
 export function encodeWav(samples: Int16Array, sampleRate = AUDIO_SAMPLE_RATE): Uint8Array {
   const dataBytes = samples.length * 2

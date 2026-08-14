@@ -5,6 +5,7 @@ import { TodaySession } from '@/components/speaking/TodaySession'
 import { Title } from '@/components/typography'
 import { requireUser } from '@/lib/session'
 import { getOrCreateTodaySession } from '@/lib/speaking/today'
+import { getWeekView } from '@/lib/speaking/week'
 
 // Never cached: `requireUser` re-reads User.status, and "today" is a moving
 // target — a cached render would serve yesterday's prompt after midnight.
@@ -27,7 +28,10 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
   const user = await requireUser(locale)
   const t = await getTranslations({ locale, namespace: 'today' })
 
-  const today = await getOrCreateTodaySession(user.id)
+  // The week comes down with the page rather than on demand: a student who
+  // finished earlier today lands straight on P4, and 收工 without the 7 天句 is
+  // the half of that beat that makes it feel like progress (SPEC §4.3).
+  const [today, week] = await Promise.all([getOrCreateTodaySession(user.id), getWeekView(user.id)])
 
   return (
     <main className="mx-auto max-w-2xl p-6">
@@ -41,7 +45,7 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
         </div>
       </div>
 
-      <TodaySession initial={today} />
+      <TodaySession initial={today} week={week} />
     </main>
   )
 }

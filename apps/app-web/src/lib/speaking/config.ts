@@ -30,6 +30,23 @@ export function audioLimits(): AudioLimits {
   }
 }
 
+/**
+ * SPEC §4.1's 30–90 s window is the MAIN take's contract; the retry is a
+ * different act. Winner A asks for "再读 ≤3 个词", B for one model sentence, C
+ * for one more sentence — none of which take thirty seconds to say. Holding the
+ * retry to the main floor would reject the very thing the coach line asked for
+ * and strand the student on P3, which is the one place AC-S5 must not strand
+ * them. The ceiling stays: it is the upload budget, not a product rule.
+ */
+export const DEFAULT_RETRY_MIN_DURATION_MS = 2_000
+
+export function retryAudioLimits(): AudioLimits {
+  return {
+    minDurationMs: intFromEnv('SPEAKING_RETRY_MIN_DURATION_MS', DEFAULT_RETRY_MIN_DURATION_MS),
+    maxDurationMs: audioLimits().maxDurationMs,
+  }
+}
+
 /** Local directory the dev/e2e AudioStore writes to. Git-ignored. */
 export function audioDir(): string {
   return process.env.SPEAKING_AUDIO_DIR ?? '.data/audio'

@@ -101,7 +101,18 @@
       "C_example": "看法和理由都有了。再举一个具体例子就收工。",
       "C_more": "说得清楚，理由和例子都有了。再补一个具体细节就收工。"
     },
-    "recorderUnavailable": "这个浏览器没能开始录音。刷新一下，或换一个浏览器试试。"
+    "recorderUnavailable": "这个浏览器没能开始录音。刷新一下，或换一个浏览器试试。",
+    "saving": "正在保存这次练习…",
+    "retry": {
+      "start": "再说一遍",
+      "skip": "跳过，今天到这",
+      "stop": "说完了",
+      "hint": "照着上面那条再说一次，几秒钟就够。"
+    },
+    "done": {
+      "title": "今天练完了",
+      "seeWeek": "看看这一周"
+    }
   },
   "errors": {
     "rateLimited": "操作过于频繁，请稍后再试。",
@@ -124,6 +135,22 @@
     "audioNotWav": "这段录音读不出来，请重新录一次。",
     "audioWrongFormat": "录音格式不支持，请重新录一次。",
     "audioTooShort": "说得太短了，至少说满 30 秒。",
-    "audioTooLong": "说得太长了，控制在 90 秒以内。"
+    "audioTooLong": "说得太长了，控制在 90 秒以内。",
+    "sessionNotScored": "这次练习还没有评分，先录一段你的回答。"
+  },
+  "me": {
+    "title": "这一周",
+    "calendar": "最近 7 天",
+    "completedDays": "最近 {days} 天里练了 {count} 天。",
+    "dayDone": "已练习",
+    "dayEmpty": "未练习",
+    "today": "今天",
+    "empty": "再练几天，这里就会出现一句关于你的变化。",
+    "backToToday": "回到今日一题",
+    "progress": {
+      "A": "这周你主要在练把话说清（{days} 天里 {count} 次）。",
+      "B": "这周你主要在练用自己的话说（{days} 天里 {count} 次）。",
+      "C": "这周你主要在练把理由说完整（{days} 天里 {count} 次）。"
+    }
   }
 }

@@ -101,7 +101,18 @@
       "C_example": "You have a view and a reason. One concrete example and you're done.",
       "C_more": "Clear, with a reason and an example. One more concrete detail and you're done."
     },
-    "recorderUnavailable": "This browser could not start recording. Try reloading, or use a different browser."
+    "recorderUnavailable": "This browser could not start recording. Try reloading, or use a different browser.",
+    "saving": "Saving your practice...",
+    "retry": {
+      "start": "Say it again",
+      "skip": "Skip — I'm done for today",
+      "stop": "Done",
+      "hint": "Take the note above and say it once more. A few seconds is enough."
+    },
+    "done": {
+      "title": "That's today's practice done",
+      "seeWeek": "See how this week has gone"
+    }
   },
   "errors": {
     "rateLimited": "Too many attempts. Please try again later.",
@@ -124,6 +135,22 @@
     "audioNotWav": "That recording could not be read. Please record again.",
     "audioWrongFormat": "That recording is in an unsupported format. Please record again.",
     "audioTooShort": "That was too short. Speak for at least 30 seconds.",
-    "audioTooLong": "That was too long. Keep it under 90 seconds."
+    "audioTooLong": "That was too long. Keep it under 90 seconds.",
+    "sessionNotScored": "This practice has not been scored yet. Record your answer first."
+  },
+  "me": {
+    "title": "Your week",
+    "calendar": "Last 7 days",
+    "completedDays": "Practised {count} of the last {days} days.",
+    "dayDone": "practised",
+    "dayEmpty": "not practised",
+    "today": "today",
+    "empty": "Practise a few days and a line about your progress will appear here.",
+    "backToToday": "Back to today's question",
+    "progress": {
+      "A": "This week you have mostly been working on being easier to hear ({count} of the last {days} days).",
+      "B": "This week you have mostly been working on saying things in your own words ({count} of the last {days} days).",
+      "C": "This week you have mostly been working on finishing the thought ({count} of the last {days} days)."
+    }
   }
 }

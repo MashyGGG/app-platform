@@ -3,7 +3,7 @@ import type { ZodTypeAny } from 'zod'
 import { API_ERROR, type ApiErrorCode, errorBody } from '@app/shared/errors'
 import { registerSchema, zodDetails } from '@app/shared/validation'
 import { otpVerifySchema } from '@app/shared/speaking/otp'
-import { COACH_LINE_KEYS } from '@app/shared/speaking'
+import { AUDIO_REJECTION_KEYS, COACH_LINE_KEYS, PROGRESS_LINE_KEYS } from '@app/shared/speaking'
 import en from './en.json'
 import zh from './zh.json'
 
@@ -74,17 +74,12 @@ const VALIDATION_KEYS = [
 ].filter((key) => key.startsWith('errors.'))
 
 /**
- * The upload gate's four rejection reasons. They reach the client inside
- * `details.audio`, which no schema emits, so they are the one list here that
- * cannot be collected by failing something — keep it in step with
- * `REJECTION_KEY` in the audio route.
+ * Keys that reach the client inside `details.<field>`, which no schema emits —
+ * the upload gate's four rejection reasons (from the shared table the routes
+ * actually use, so this cannot drift) plus the one the completion endpoints
+ * return when a day is closed before it was ever scored.
  */
-const AUDIO_KEYS = [
-  'errors.audioNotWav',
-  'errors.audioWrongFormat',
-  'errors.audioTooShort',
-  'errors.audioTooLong',
-]
+const DETAIL_KEYS = [...Object.values(AUDIO_REJECTION_KEYS), 'errors.sessionNotScored']
 
 describe('app-web messages', () => {
   it('collected the keys it is supposed to be checking', () => {
@@ -104,7 +99,7 @@ describe('app-web messages', () => {
 
   it.each(Object.keys(LOCALES))('translates every server error key in %s', (locale) => {
     const messages = LOCALES[locale as keyof typeof LOCALES]
-    for (const key of [...ENVELOPE_KEYS, ...VALIDATION_KEYS, ...AUDIO_KEYS]) {
+    for (const key of [...ENVELOPE_KEYS, ...VALIDATION_KEYS, ...DETAIL_KEYS]) {
       const value = lookup(messages, key)
       expect(typeof value, `${locale} is missing ${key}`).toBe('string')
       expect(String(value).trim(), `${locale}.${key} is empty`).not.toBe('')
@@ -125,6 +120,21 @@ describe('app-web messages', () => {
       }
     },
   )
+
+  it.each(Object.keys(LOCALES))('translates every 7-day progress line in %s', (locale) => {
+    // AC-S8's sentence is a template, and a template with no translation behind
+    // it renders as `me.progress.A` — the one line `/me` exists to show.
+    const messages = LOCALES[locale as keyof typeof LOCALES]
+    expect(PROGRESS_LINE_KEYS.length).toBe(3)
+    for (const key of PROGRESS_LINE_KEYS) {
+      const value = lookup(messages, key)
+      expect(typeof value, `${locale} is missing ${key}`).toBe('string')
+      // Both placeholders are supplied by `weeklyProgress`; a template that
+      // dropped one would silently stop saying how many times.
+      expect(String(value), `${locale}.${key} must interpolate {count}`).toContain('{count}')
+      expect(String(value), `${locale}.${key} must interpolate {days}`).toContain('{days}')
+    }
+  })
 
   it('keeps en and zh at exactly the same set of keys', () => {
     // A key present in one locale only is a half-translated release: it renders

@@ -19,8 +19,13 @@ import type { TelemetryEvent } from '../../src/telemetry'
 interface TodayBody {
   dateKey: string
   prompt: { id: string; text: string; checklist: string[] }
-  session: { id: string; status: string; winnerType: 'A' | 'B' | 'C' | null }
-  limits: { minDurationMs: number; maxDurationMs: number }
+  session: {
+    id: string
+    status: string
+    winnerType: 'A' | 'B' | 'C' | null
+    retryState: 'PENDING' | 'DONE' | 'SKIPPED'
+  }
+  limits: { minDurationMs: number; maxDurationMs: number; retryMinDurationMs: number }
 }
 
 interface ScoreBody {
@@ -99,6 +104,63 @@ test('AC-S2 / AC-S3: one click starts recording, and the take comes back with ex
   await expect(winner).toHaveCount(1)
   await expect(winner).toHaveAttribute('data-winner', /^[ABC]$/)
   expect(await page.getByTestId('retry-item').count()).toBeGreaterThan(0)
+})
+
+test('AC-S4 / AC-S5: the retry happens in place, and finishing it closes the day', async ({
+  page,
+}) => {
+  await arriveAtToday(page)
+
+  await page.getByRole('button', { name: 'Start recording' }).click()
+  const stop = page.getByRole('button', { name: "I'm done" })
+  await expect(stop).toBeEnabled({ timeout: 15_000 })
+  await stop.click()
+  await expect(page.getByTestId('winner')).toBeVisible({ timeout: 30_000 })
+
+  // AC-S4's 测法 is literally "再试过程无路由跳转到独立报告页", so the URL is the
+  // assertion — pinned before the retry and unchanged through all of it.
+  const url = page.url()
+  expect(url).toMatch(/\/en\/today$/)
+
+  await page.getByRole('button', { name: 'Say it again' }).click()
+  await expect(page.getByText('Recording', { exact: true })).toBeVisible()
+  expect(page.url()).toBe(url)
+
+  const finish = page.getByRole('button', { name: 'Done', exact: true })
+  await expect(finish).toBeEnabled({ timeout: 15_000 })
+  await finish.click()
+
+  // AC-S5: 收工文案, and the week line that comes with it (AC-S8's template on
+  // its first day of data).
+  const done = page.getByTestId('done')
+  await expect(done).toBeVisible({ timeout: 30_000 })
+  expect(page.url()).toBe(url)
+  // The winner card is gone: the next step was taken, so there is nothing left
+  // on screen to act on.
+  await expect(page.getByTestId('winner')).toHaveCount(0)
+  await expect(page.getByTestId('progress-line')).not.toBeEmpty()
+
+  // Coming back later lands on the finished day rather than the record button.
+  await page.reload()
+  await expect(page.getByTestId('done')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Start recording' })).toHaveCount(0)
+})
+
+test('AC-S5: skipping the retry still finishes the day', async ({ page }) => {
+  await arriveAtToday(page)
+
+  await page.getByRole('button', { name: 'Start recording' }).click()
+  const stop = page.getByRole('button', { name: "I'm done" })
+  await expect(stop).toBeEnabled({ timeout: 15_000 })
+  await stop.click()
+  await expect(page.getByTestId('winner')).toBeVisible({ timeout: 30_000 })
+
+  // 已确认决策 5 — 跳过也算今天练完. No confirmation step in between: an "are you
+  // sure?" here would be the app arguing with 允许停 (D3).
+  await page.getByRole('button', { name: "Skip — I'm done for today" }).click()
+
+  await expect(page.getByTestId('done')).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByTestId('winner')).toHaveCount(0)
 })
 
 test('AC-S3: the upload endpoint returns one winner and material to act on', async () => {
