@@ -14,6 +14,13 @@ export const RATE_LIMITS = {
   register: { limit: 5, window: '1 h', windowSec: 60 * 60 },
   'reset-req': { limit: 3, window: '1 h', windowSec: 60 * 60 },
   'reset-confirm': { limit: 5, window: '15 m', windowSec: 15 * 60 },
+  // Daily-speaking OTP login (IMPL §4.5). `otp-req` is keyed by EMAIL, not by
+  // IP: the abuse that actually hurts is mail-bombing one address, and the free
+  // Resend tier is a hard 100 messages/day (IMPL §4.4 红线 1).
+  'otp-req': { limit: 3, window: '1 h', windowSec: 60 * 60 },
+  // Not in IMPL §4.5, but a six-digit code without an attempt cap is a 10^6
+  // search anyone can finish. Keyed `<ip>:<email>` like login.
+  'otp-verify': { limit: 5, window: '15 m', windowSec: 15 * 60 },
 } as const
 
 export type RateLimitAction = keyof typeof RATE_LIMITS

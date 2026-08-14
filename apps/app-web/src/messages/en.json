@@ -17,7 +17,22 @@
       "submit": "Sign in",
       "noAccount": "No account yet?",
       "register": "Create one",
-      "forgot": "Forgot password?"
+      "forgot": "Forgot password?",
+      "useOtp": "Sign in with an email code"
+    },
+    "otp": {
+      "title": "Email sign-in",
+      "subtitle": "Enter your email and we'll send a 6-digit code — a new address creates an account",
+      "email": "Email",
+      "sendCode": "Send code",
+      "sent": "We sent a code to {email}. It expires in 10 minutes.",
+      "code": "Code",
+      "codeHint": "6 digits — check your spam folder if it hasn't arrived.",
+      "verify": "Sign in",
+      "resend": "Send another code",
+      "resendIn": "Resend in {seconds}s",
+      "changeEmail": "Use another email",
+      "usePassword": "Sign in with a password instead"
     },
     "register": {
       "title": "Create account",
@@ -71,13 +86,14 @@
     "unauthorized": "Please sign in first.",
     "forbidden": "You do not have permission to do that.",
     "notFound": "Not found.",
-    "invalidToken": "This link is invalid or has expired.",
+    "invalidToken": "That link or code is invalid or has expired.",
     "internal": "Something went wrong. Please try again.",
     "invalidEmail": "Enter a valid email address.",
     "passwordTooShort": "Password must be at least 8 characters.",
     "passwordTooLong": "Password must be at most 128 characters.",
     "passwordTooWeak": "Password must contain both letters and numbers.",
     "passwordMismatch": "The two passwords do not match.",
+    "invalidOtpCode": "The code is 6 digits.",
     "network": "Network error. Please try again."
   }
 }

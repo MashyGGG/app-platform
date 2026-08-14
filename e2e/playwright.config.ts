@@ -23,6 +23,11 @@ function webServer(app: 'app-web' | 'admin-web', url: string) {
     // app can actually render or reach the database.
     url: `${url}/en/login`,
     cwd: repoRoot,
+    // The suite has no inbox, so the OTP request endpoint hands the code back in
+    // its response instead of mailing it (AC-S9). The route refuses to do this
+    // on a production deployment whatever this flag says — see
+    // apps/app-web/src/app/api/auth/otp/request/route.ts.
+    env: { OTP_DEV_ECHO: '1' },
     // Deliberately NOT `!isCI`. Reusing whatever already answers on :3000 is how
     // you end up running the suite against an unrelated project's dev server and
     // reading its 404s as product failures. Opt in with E2E_REUSE=1 when you know

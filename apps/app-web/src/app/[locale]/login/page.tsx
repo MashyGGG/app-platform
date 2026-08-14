@@ -27,6 +27,7 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
         <span>
           {t('noAccount')} <Link href="/register">{t('register')}</Link>
         </span>
+        <Link href="/auth">{t('useOtp')}</Link>
       </Space>
     </AuthShell>
   )

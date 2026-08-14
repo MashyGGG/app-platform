@@ -17,7 +17,22 @@
       "submit": "登录",
       "noAccount": "还没有账号？",
       "register": "去注册",
-      "forgot": "忘记密码？"
+      "forgot": "忘记密码？",
+      "useOtp": "用邮箱验证码登录"
+    },
+    "otp": {
+      "title": "邮箱登录",
+      "subtitle": "输入邮箱，我们会发送一个 6 位验证码；新邮箱将自动创建账号",
+      "email": "邮箱",
+      "sendCode": "发送验证码",
+      "sent": "验证码已发送至 {email}，10 分钟内有效。",
+      "code": "验证码",
+      "codeHint": "6 位数字，注意查收垃圾邮件。",
+      "verify": "登录",
+      "resend": "重新发送",
+      "resendIn": "{seconds} 秒后可重发",
+      "changeEmail": "换个邮箱",
+      "usePassword": "改用密码登录"
     },
     "register": {
       "title": "注册",
@@ -71,13 +86,14 @@
     "unauthorized": "请先登录。",
     "forbidden": "没有权限执行该操作。",
     "notFound": "资源不存在。",
-    "invalidToken": "链接无效或已过期，请重新发起。",
+    "invalidToken": "链接或验证码无效，可能已过期，请重新发起。",
     "internal": "服务器开小差了，请稍后再试。",
     "invalidEmail": "请输入合法的邮箱地址。",
     "passwordTooShort": "密码至少 8 位。",
     "passwordTooLong": "密码不能超过 128 位。",
     "passwordTooWeak": "密码需同时包含字母和数字。",
     "passwordMismatch": "两次输入的密码不一致。",
+    "invalidOtpCode": "验证码为 6 位数字。",
     "network": "网络异常，请稍后再试。"
   }
 }

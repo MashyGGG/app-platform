@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import type { ZodTypeAny } from 'zod'
 import { API_ERROR, type ApiErrorCode, errorBody } from '@app/shared/errors'
 import { registerSchema, zodDetails } from '@app/shared/validation'
+import { otpVerifySchema } from '@app/shared/speaking/otp'
 import en from './en.json'
 import zh from './zh.json'
 
@@ -46,18 +48,28 @@ const ENVELOPE_KEYS = (Object.values(API_ERROR) as ApiErrorCode[]).map(
  * Every messageKey the zod schemas can emit, collected by actually failing them
  * rather than by keeping a hand-written list that would drift.
  */
+function keysEmittedBy(schema: ZodTypeAny, inputs: unknown[]): string[] {
+  return inputs.flatMap((input) => {
+    const result = schema.safeParse(input)
+    return result.success ? [] : Object.values(zodDetails(result.error)).flat()
+  })
+}
+
 const VALIDATION_KEYS = [
-  ...new Set(
-    [
+  ...new Set([
+    ...keysEmittedBy(registerSchema, [
       { email: 'not-an-email', password: 'abcd1234' },
       { email: 'user@example.com', password: 'abc1' },
       { email: 'user@example.com', password: `a1${'x'.repeat(200)}` },
       { email: 'user@example.com', password: 'abcdefghij' },
-    ].flatMap((input) => {
-      const result = registerSchema.safeParse(input)
-      return result.success ? [] : Object.values(zodDetails(result.error)).flat()
-    }),
-  ),
+    ]),
+    // The OTP sign-in channel (AC-S9) ships its own key, and it reaches the
+    // user in exactly the same way.
+    ...keysEmittedBy(otpVerifySchema, [
+      { email: 'user@example.com', code: 'abcdef' },
+      { email: 'not-an-email', code: '123456' },
+    ]),
+  ]),
 ].filter((key) => key.startsWith('errors.'))
 
 describe('app-web messages', () => {
@@ -71,6 +83,7 @@ describe('app-web messages', () => {
         'errors.passwordTooShort',
         'errors.passwordTooLong',
         'errors.passwordTooWeak',
+        'errors.invalidOtpCode',
       ]),
     )
   })

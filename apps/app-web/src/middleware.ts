@@ -8,7 +8,7 @@ const intlMiddleware = createIntlMiddleware(routing)
 /** Routes that require a session. */
 const PROTECTED = ['/home']
 /** Routes that a signed-in user should not see. */
-const AUTH_ONLY = ['/login', '/register']
+const AUTH_ONLY = ['/login', '/register', '/auth']
 
 /**
  * Cheap FIRST gate only (Edge runtime — no DB access here).

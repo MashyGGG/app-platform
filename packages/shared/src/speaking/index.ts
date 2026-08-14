@@ -7,4 +7,6 @@
  * here must stay Vitest-drivable without a database (IMPL §4.6).
  */
 export * from './content'
+export * from './otp'
+export * from './otp-hash'
 export * from './rotation'
