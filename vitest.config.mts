@@ -13,7 +13,7 @@ const at = (...segments: string[]) => path.resolve(root, ...segments)
  * there is deliberately no jsdom and no component test here (antd + SSR +
  * next-intl are covered for real by the Playwright suite instead).
  */
-function appProject(name: 'app-web' | 'admin-web') {
+function appProject(name: 'app-web' | 'admin-web' | 'blog-web') {
   return {
     test: {
       name,
@@ -43,6 +43,7 @@ export default defineConfig({
       packageProject('db'),
       appProject('admin-web'),
       appProject('app-web'),
+      appProject('blog-web'),
     ],
     // `globals: false` (the default) is kept on purpose: tests import
     // `describe`/`it`/`expect` explicitly, so neither tsconfig `types` nor the

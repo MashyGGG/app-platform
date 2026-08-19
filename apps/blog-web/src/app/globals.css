@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * One palette, defined light-first, redefined once for dark. Every colour in
+ * the app goes through a token — no bare hex outside this block — so a theme
+ * change is one edit rather than a grep.
+ */
+:root {
+  --bg: #fbfbfa;
+  --bg-raised: #ffffff;
+  --border: #e6e4e0;
+  --text: #1c1b19;
+  --text-muted: #6b6862;
+  --accent: #0b6e5f;
+  --accent-soft: #e3f1ee;
+  --warn: #a4552a;
+  --warn-soft: #fbeee5;
+  --code-bg: #f6f6f4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16171a;
+    --bg-raised: #1d1f23;
+    --border: #2e3238;
+    --text: #e7e6e3;
+    --text-muted: #9a9891;
+    --accent: #59c6b0;
+    --accent-soft: #16302c;
+    --warn: #e0a06d;
+    --warn-soft: #33251a;
+    --code-bg: #101215;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Anchor targets otherwise land underneath the sticky header. */
+  scroll-padding-top: 5rem;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Microsoft YaHei',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --------------------------------------------------------------------------
+ * Article body. The typography plugin supplies the rhythm; these overrides
+ * only re-point its colours at the tokens above.
+ * ------------------------------------------------------------------------ */
+.prose {
+  --tw-prose-body: var(--text);
+  --tw-prose-headings: var(--text);
+  --tw-prose-lead: var(--text-muted);
+  --tw-prose-links: var(--accent);
+  --tw-prose-bold: var(--text);
+  --tw-prose-counters: var(--text-muted);
+  --tw-prose-bullets: var(--border);
+  --tw-prose-hr: var(--border);
+  --tw-prose-quotes: var(--text-muted);
+  --tw-prose-quote-borders: var(--accent);
+  --tw-prose-captions: var(--text-muted);
+  --tw-prose-code: var(--text);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
+  max-width: none;
+}
+
+.prose :where(h2, h3) {
+  scroll-margin-top: 5rem;
+}
+
+.prose :where(code):not(:where(pre code)) {
+  background-color: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.35em;
+  font-weight: 500;
+  font-size: 0.875em;
+}
+
+/* The typography plugin adds these; with a real background they read as typos. */
+.prose :where(code):not(:where(pre code))::before,
+.prose :where(code):not(:where(pre code))::after {
+  content: none;
+}
+
+.prose blockquote {
+  font-style: normal;
+  background-color: var(--accent-soft);
+  border-radius: 0 0.5rem 0.5rem 0;
+  padding: 0.75rem 1rem;
+}
+
+.prose table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.prose :where(h2, h3) .heading-anchor {
+  color: var(--border);
+  margin-left: 0.4em;
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.prose :where(h2, h3):hover .heading-anchor,
+.prose .heading-anchor:focus-visible {
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+ * Shiki. Rendered once at build time with BOTH themes inlined as CSS custom
+ * properties (`defaultColor: false`), so switching theme is a media query and
+ * not a re-highlight — there is no highlighter in the client bundle at all.
+ * ------------------------------------------------------------------------ */
+.prose pre.shiki {
+  background-color: var(--code-bg) !important;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem 1.1rem;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  overflow-x: auto;
+}
+
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+}
+
+@media (prefers-color-scheme: dark) {
+  .shiki,
+  .shiki span {
+    color: var(--shiki-dark);
+  }
+}
