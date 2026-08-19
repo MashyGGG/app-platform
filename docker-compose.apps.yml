@@ -22,8 +22,8 @@ services:
         condition: service_healthy
       redis-http:
         condition: service_started
+    # Service names, not localhost: these resolve on the compose network.
     environment: &app-env
-      # Service names, not localhost: these resolve on the compose network.
       DATABASE_URL: 'postgresql://app:app@postgres:5432/app_platform?schema=public'
       DIRECT_URL: 'postgresql://app:app@postgres:5432/app_platform?schema=public'
       UPSTASH_REDIS_REST_URL: 'http://redis-http:80'
