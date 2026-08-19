@@ -102,7 +102,12 @@ export default defineConfig({
         // capture prompt. `permissions: ['microphone']` alone is not enough:
         // it satisfies the Permissions API, but `getUserMedia` still has to
         // find a device to open.
-        '--use-fake-device-for-media-capture',
+        //
+        // `-stream`, not `-capture`. Chrome ignores an unknown switch in
+        // silence, so the misspelling reads as working everywhere a real
+        // microphone exists — a developer machine — and only fails on the one
+        // box this flag is here for.
+        '--use-fake-device-for-media-stream',
         '--use-fake-ui-for-media-stream',
       ],
     },
