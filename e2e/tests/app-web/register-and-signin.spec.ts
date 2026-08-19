@@ -31,11 +31,14 @@ test('register signs you straight in, and survives a sign-out / sign-in round tr
   await page.getByRole('button', { name: 'Create account' }).click()
 
   // Registration must sign the user in itself — no second trip through /login.
-  await expect(page).toHaveURL(/\/en\/home$/)
+  // The landing page is `/today` (AC-S9); `/home` is still the account screen.
+  await expect(page).toHaveURL(/\/en\/today$/)
+  expect(await sessionCookie(context, 'app')).toBeTruthy()
+
+  await page.goto('/en/home')
   await expect(page.getByText('Hello World')).toBeVisible()
   await expect(page.getByText(email)).toBeVisible()
   await expect(page.getByText('Active')).toBeVisible()
-  expect(await sessionCookie(context, 'app')).toBeTruthy()
 
   await page.getByRole('button', { name: 'Sign out' }).click()
   await expect(page).toHaveURL(/\/en\/login/)
@@ -54,6 +57,7 @@ test('register signs you straight in, and survives a sign-out / sign-in round tr
   await page.getByLabel('Password', { exact: true }).fill(FIXTURE_PASSWORD)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await expect(page).toHaveURL(/\/en\/home$/)
+  await expect(page).toHaveURL(/\/en\/today$/)
+  await page.goto('/en/home')
   await expect(page.getByText(email)).toBeVisible()
 })

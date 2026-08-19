@@ -64,6 +64,8 @@ model User {
   sessions      Session[]
   adminProfile  AdminProfile?
   auditsPerformed AuditLog[] @relation("AuditActor")
+  speakingSessions    SpeakingSession[]
+  speakingCompletions SpeakingDailyCompletion[]
 
   @@index([status])
   @@index([createdAt])
@@ -122,6 +124,169 @@ model AdminProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([role])
+}
+
+// -----------------------------------------------------------------------------
+// Daily speaking MVP (docs/spec/IMPL-daily-speaking-mvp-in-app-platform.md).
+//
+// Everything below is prefixed `Speaking*` and touches NOTHING above except
+// `User.id`. That is deliberate (IMPL §3-C1): lifting this product into its own
+// repository later must be "move six tables + one directory", not a rewrite.
+// -----------------------------------------------------------------------------
+
+/// Explicit state machine (IMPL §2.3). FAILED and DEGRADED hang off the side of
+/// the happy path — neither consumes the day's completion allowance.
+enum SpeakingSessionStatus {
+  NOT_STARTED
+  WARMUP
+  SPEAKING
+  SCORING
+  RETRY
+  COMPLETED
+  FAILED
+  DEGRADED
+}
+
+/// Exactly one winner is ever shown, priority A > B > C (SPEC §4.1).
+/// A = 听不清 · B = 在背稿 · C = 没说完
+enum SpeakingWinnerType {
+  A
+  B
+  C
+}
+
+enum SpeakingRetryState {
+  PENDING
+  DONE
+  SKIPPED
+}
+
+enum SpeakingSentenceKind {
+  warmup
+  paraphrase
+}
+
+/// 今日一题. `slug` is the import key: content lives in a JSON file and is
+/// imported repeatedly (`pnpm speaking:import`), so rows need a stable identity
+/// that is not the generated cuid.
+model SpeakingPrompt {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  text            String
+  warmupSentence  String
+  modelAudioKey   String
+  /// string[] — the "理由 / 例子" hints that decide winner C (SPEC §5.1).
+  checklist       Json
+  sort            Int
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  words     SpeakingPromptWord[]
+  sentences SpeakingSentence[]
+  sessions  SpeakingSession[]
+
+  @@index([isActive, sort])
+}
+
+/// 纠音词. Global by `lemma`: the same word is legitimately pre-attached to
+/// several prompts, and the ASR fallback path (SPEC §5.3) creates rows here too.
+model SpeakingWord {
+  id        String   @id @default(cuid())
+  lemma     String   @unique
+  ipa       String
+  /// string[] — phoneme sequence handed to the reference-text assessment mode.
+  phonemes  Json
+  audioKey  String?
+  gloss     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prompts SpeakingPromptWord[]
+}
+
+/// 预挂易错词 — the primary candidate set for winner A (SPEC §5.3).
+model SpeakingPromptWord {
+  promptId String
+  wordId   String
+  sort     Int    @default(0)
+
+  prompt SpeakingPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  word   SpeakingWord   @relation(fields: [wordId], references: [id], onDelete: Cascade)
+
+  @@id([promptId, wordId])
+  @@index([wordId])
+}
+
+/// P1 热身句 (kind = warmup) 与 P3-B 换说法 (kind = paraphrase).
+model SpeakingSentence {
+  id       String               @id @default(cuid())
+  promptId String
+  text     String
+  audioKey String?
+  kind     SpeakingSentenceKind
+  sort     Int                  @default(0)
+
+  prompt SpeakingPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@index([promptId, kind, sort])
+}
+
+/// One row per practice attempt — a real primary key, never a JSON array
+/// (SPEC 原则 E).
+model SpeakingSession {
+  id            String                @id @default(cuid())
+  userId        String
+  promptId      String
+  /// `YYYY-MM-DD` in the user's local day (see packages/shared rotation.ts).
+  /// Paired with the unique below, this is what makes AC-I2 — "同一用户同一自然日
+  /// 多次请求 /today 返回同一 session" — a database invariant rather than a
+  /// query convention that two concurrent requests can defeat.
+  dateKey       String                @db.VarChar(10)
+  status        SpeakingSessionStatus @default(NOT_STARTED)
+  audioKey      String?
+  durationMs    Int?
+  transcript    String?
+  winnerType    SpeakingWinnerType?
+  /// { coachLine, retryItems[] } — what P3 actually rendered.
+  winnerPayload Json?
+  retryAudioKey String?
+  retryState    SpeakingRetryState    @default(PENDING)
+  /// True when the client hit the 20s slow-network path (AC-S10). Distinct from
+  /// FAILED on purpose: merging them would corrupt the observability signal.
+  degradedFlag  Boolean               @default(false)
+  startedAt     DateTime              @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  user            User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt          SpeakingPrompt           @relation(fields: [promptId], references: [id])
+  dailyCompletion SpeakingDailyCompletion?
+
+  @@unique([userId, dateKey])
+  @@index([userId, startedAt])
+  @@index([promptId])
+  @@index([status])
+}
+
+/// 收工记录. The `@@unique([userId, date])` is what makes "one session per user
+/// per calendar day" idempotent (AC-I2); `date` is a DATE, computed in the
+/// user's local day, never a timestamp.
+model SpeakingDailyCompletion {
+  id          String              @id @default(cuid())
+  userId      String
+  date        DateTime            @db.Date
+  sessionId   String              @unique
+  winnerType  SpeakingWinnerType?
+  retryState  SpeakingRetryState  @default(PENDING)
+  createdAt   DateTime            @default(now())
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session SpeakingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
 }
 
 /// Append-only (SPEC §1.6): no update, no delete, ever.

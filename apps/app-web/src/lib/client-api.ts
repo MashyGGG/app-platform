@@ -9,11 +9,40 @@ export type ApiResult<T> = { ok: true; data: T } | { ok: false; failure: ApiFail
 
 /** Every API error already carries an i18n `messageKey` — never render `error`. */
 export async function postJson<T>(url: string, body: unknown): Promise<ApiResult<T>> {
+  return send('POST', url, JSON.stringify(body), 'application/json')
+}
+
+/**
+ * For endpoints that record a fact about an existing resource rather than
+ * advance it — currently only `…/degraded` (AC-S10), which flips one flag.
+ */
+export async function patchJson<T>(url: string, body: unknown): Promise<ApiResult<T>> {
+  return send('PATCH', url, JSON.stringify(body), 'application/json')
+}
+
+/**
+ * For the one endpoint whose body is a file: a take is a single ~3 MB WAV with
+ * no accompanying fields, so multipart would only add a parser to both ends.
+ */
+export async function postBinary<T>(
+  url: string,
+  body: Uint8Array,
+  contentType: string,
+): Promise<ApiResult<T>> {
+  return send('POST', url, body as unknown as BodyInit, contentType)
+}
+
+async function send<T>(
+  method: string,
+  url: string,
+  body: BodyInit,
+  contentType: string,
+): Promise<ApiResult<T>> {
   try {
     const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
+      method,
+      headers: { 'content-type': contentType },
+      body,
     })
 
     const data = await response.json().catch(() => null)

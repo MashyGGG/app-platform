@@ -167,7 +167,7 @@ That is a `vitest` project of maybe 60 assertions, and it would run in under a s
 sequencing was E2E first: it is what covers the claims we would be embarrassed to break, and it
 guards the refactors that a unit-test layer will want to make.
 
-> **Since written:** that layer now exists — `pnpm test`, 83 tests, ~0.9 s. It follows this list, plus
+> **Since written:** that layer now exists — `pnpm test`, 186 tests, ~1.5 s. It follows this list, plus
 > one addition the list missed (every server `messageKey` really being translated in both locales) and
 > one small extraction to make the middleware's route logic reachable. See
 > [UNIT-TESTING.md](UNIT-TESTING.md).

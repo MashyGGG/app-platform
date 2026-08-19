@@ -23,6 +23,34 @@ function webServer(app: 'app-web' | 'admin-web', url: string) {
     // app can actually render or reach the database.
     url: `${url}/en/login`,
     cwd: repoRoot,
+    // The suite has no inbox, so the OTP request endpoint hands the code back in
+    // its response instead of mailing it (AC-S9). The route refuses to do this
+    // on a production deployment whatever this flag says — see
+    // apps/app-web/src/app/api/auth/otp/request/route.ts.
+    env: {
+      OTP_DEV_ECHO: '1',
+      // A browser spec that has to speak for a real 30 seconds turns a 20-second
+      // suite into a five-minute one; the 30 s product boundary is a Vitest row
+      // (`packages/shared/src/speaking/wav.test.ts`) instead. Specs that talk to
+      // the upload endpoint directly still send a full-length take.
+      SPEAKING_MIN_DURATION_MS: '2000',
+      // The seeded prompts reference 示范音 keys whose files content ops has not
+      // produced yet; serve silence for them so an <audio> in a test is a real
+      // player rather than a dead src. Refused on a production deployment.
+      SPEAKING_AUDIO_PLACEHOLDER: '1',
+      // AC-S6 and AC-S10 need a 500 and a slow-but-successful response, and the
+      // stub provider is deterministic and never fails — by design. This opens
+      // the per-request injection those two specs ask for; it is off by default
+      // and refused on a production deployment either way.
+      SPEAKING_TEST_HOOKS: '1',
+      // Production's numbers are 20 s and 25 s (`lib/speaking/config.ts`). The
+      // suite verifies the MECHANISM, not the constant: waiting twenty real
+      // seconds per assertion would cost more than the criterion is worth, and
+      // the constants themselves are one `intFromEnv` call each. Kept well above
+      // a healthy stub round trip (~200 ms) so no other spec trips the banner.
+      SPEAKING_DEGRADE_AFTER_MS: '4000',
+      SPEAKING_TEST_HOOK_DELAY_MS: '9000',
+    },
     // Deliberately NOT `!isCI`. Reusing whatever already answers on :3000 is how
     // you end up running the suite against an unrelated project's dev server and
     // reading its 404s as product failures. Opt in with E2E_REUSE=1 when you know
@@ -48,7 +76,12 @@ export default defineConfig({
   // A `.only` left in a spec would silently shrink the release gate.
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
-  workers: isCI ? 2 : undefined,
+  // Not `undefined` locally (which is half the cores, and on a big machine that
+  // is ten). Every `/today` spec opens a fake capture device and records in real
+  // time, and those audio threads starve each other long before the CPUs are
+  // busy: past about four, takes stall mid-recording and specs fail for reasons
+  // that have nothing to do with the product.
+  workers: isCI ? 2 : 4,
   // Every assertion here crosses a real HTTP boundary and a real database.
   timeout: 60_000,
   expect: { timeout: 10_000 },
@@ -59,6 +92,26 @@ export default defineConfig({
 
   use: {
     ...devices['Desktop Chrome'],
+    // `/today` records for real. The fake device feeds Chrome a synthetic tone
+    // instead of a microphone, and granting the permission up front stands in
+    // for the OS dialog — which Playwright cannot drive, and which is therefore
+    // the one part of AC-S2's ten seconds the suite does not measure.
+    launchOptions: {
+      args: [
+        // Synthesise a microphone (a CI box has none) and auto-accept the
+        // capture prompt. `permissions: ['microphone']` alone is not enough:
+        // it satisfies the Permissions API, but `getUserMedia` still has to
+        // find a device to open.
+        //
+        // `-stream`, not `-capture`. Chrome ignores an unknown switch in
+        // silence, so the misspelling reads as working everywhere a real
+        // microphone exists — a developer machine — and only fails on the one
+        // box this flag is here for.
+        '--use-fake-device-for-media-stream',
+        '--use-fake-ui-for-media-stream',
+      ],
+    },
+    permissions: ['microphone'],
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',

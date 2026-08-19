@@ -1,0 +1,75 @@
+# Runs BOTH apps in Docker against the LOCAL stack in docker-compose.yml
+# (postgres + the Upstash-REST shim) — nothing here touches Neon or Upstash.
+# That is the difference from docker-compose.remote.yml, which writes production
+# data and is not what you want for verifying a feature branch.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.apps.yml up -d --build
+#
+#   app-web    http://localhost:3100
+#   admin-web  http://localhost:3101
+#
+# Ports are 3100/3101, not 3000/3001, so a `pnpm dev` on the host keeps working.
+services:
+  app-web:
+    image: app-platform-local:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app-platform-app-web
+    command: pnpm --filter app-web exec next start --port 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis-http:
+        condition: service_started
+    # Service names, not localhost: these resolve on the compose network.
+    environment: &app-env
+      DATABASE_URL: 'postgresql://app:app@postgres:5432/app_platform?schema=public'
+      DIRECT_URL: 'postgresql://app:app@postgres:5432/app_platform?schema=public'
+      UPSTASH_REDIS_REST_URL: 'http://redis-http:80'
+      UPSTASH_REDIS_REST_TOKEN: 'local_dev_token'
+      # Local-only values, and deliberately different from each other — the
+      # cookie-isolation invariant is one of the things you are verifying.
+      AUTH_SECRET_APP: 'local-docker-app-web-secret-not-for-any-real-env'
+      AUTH_SECRET_ADMIN: 'local-docker-admin-web-secret-not-for-any-real-env'
+      AUTH_TRUST_HOST: 'true'
+      NEXT_PUBLIC_APP_URL: 'http://localhost:3100'
+      NEXT_PUBLIC_ADMIN_URL: 'http://localhost:3101'
+      # No RESEND_API_KEY: sign-in codes are printed to the container log
+      # instead of being emailed — `docker compose logs -f app-web`.
+      EMAIL_FROM: 'onboarding@resend.dev'
+      # Deterministic, offline, free. Azure needs a key and burns F0 quota.
+      SPEECH_PROVIDER: 'stub'
+      # Takes live on a named volume, not in the image, so a rebuild does not
+      # wipe what you recorded.
+      SPEAKING_AUDIO_DIR: '/app/.data/audio'
+      # The seeded prompts name 示范音 keys whose files do not exist yet; serve
+      # silence so the warm-up player is real. Refused on a production deploy.
+      SPEAKING_AUDIO_PLACEHOLDER: '1'
+      # Lets you force a scoring failure (AC-S6) or a slow score (AC-S10) from
+      # the browser with a `speaking-test-hook` cookie. Local only.
+      SPEAKING_TEST_HOOKS: '1'
+    volumes:
+      - speaking-audio:/app/.data/audio
+    ports:
+      - '3100:3000'
+
+  admin-web:
+    # Same image — the second build block is a cache hit, not a second build.
+    image: app-platform-local:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app-platform-admin-web
+    command: pnpm --filter admin-web exec next start --port 3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis-http:
+        condition: service_started
+    environment: *app-env
+    ports:
+      - '3101:3001'
+
+volumes:
+  speaking-audio:

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import type { ZodTypeAny } from 'zod'
 import { API_ERROR, type ApiErrorCode, errorBody } from '@app/shared/errors'
 import { registerSchema, zodDetails } from '@app/shared/validation'
+import { otpVerifySchema } from '@app/shared/speaking/otp'
+import { AUDIO_REJECTION_KEYS, COACH_LINE_KEYS, PROGRESS_LINE_KEYS } from '@app/shared/speaking'
 import en from './en.json'
 import zh from './zh.json'
 
@@ -46,19 +49,37 @@ const ENVELOPE_KEYS = (Object.values(API_ERROR) as ApiErrorCode[]).map(
  * Every messageKey the zod schemas can emit, collected by actually failing them
  * rather than by keeping a hand-written list that would drift.
  */
+function keysEmittedBy(schema: ZodTypeAny, inputs: unknown[]): string[] {
+  return inputs.flatMap((input) => {
+    const result = schema.safeParse(input)
+    return result.success ? [] : Object.values(zodDetails(result.error)).flat()
+  })
+}
+
 const VALIDATION_KEYS = [
-  ...new Set(
-    [
+  ...new Set([
+    ...keysEmittedBy(registerSchema, [
       { email: 'not-an-email', password: 'abcd1234' },
       { email: 'user@example.com', password: 'abc1' },
       { email: 'user@example.com', password: `a1${'x'.repeat(200)}` },
       { email: 'user@example.com', password: 'abcdefghij' },
-    ].flatMap((input) => {
-      const result = registerSchema.safeParse(input)
-      return result.success ? [] : Object.values(zodDetails(result.error)).flat()
-    }),
-  ),
+    ]),
+    // The OTP sign-in channel (AC-S9) ships its own key, and it reaches the
+    // user in exactly the same way.
+    ...keysEmittedBy(otpVerifySchema, [
+      { email: 'user@example.com', code: 'abcdef' },
+      { email: 'not-an-email', code: '123456' },
+    ]),
+  ]),
 ].filter((key) => key.startsWith('errors.'))
+
+/**
+ * Keys that reach the client inside `details.<field>`, which no schema emits —
+ * the upload gate's four rejection reasons (from the shared table the routes
+ * actually use, so this cannot drift) plus the one the completion endpoints
+ * return when a day is closed before it was ever scored.
+ */
+const DETAIL_KEYS = [...Object.values(AUDIO_REJECTION_KEYS), 'errors.sessionNotScored']
 
 describe('app-web messages', () => {
   it('collected the keys it is supposed to be checking', () => {
@@ -71,16 +92,47 @@ describe('app-web messages', () => {
         'errors.passwordTooShort',
         'errors.passwordTooLong',
         'errors.passwordTooWeak',
+        'errors.invalidOtpCode',
       ]),
     )
   })
 
   it.each(Object.keys(LOCALES))('translates every server error key in %s', (locale) => {
     const messages = LOCALES[locale as keyof typeof LOCALES]
-    for (const key of [...ENVELOPE_KEYS, ...VALIDATION_KEYS]) {
+    for (const key of [...ENVELOPE_KEYS, ...VALIDATION_KEYS, ...DETAIL_KEYS]) {
       const value = lookup(messages, key)
       expect(typeof value, `${locale} is missing ${key}`).toBe('string')
       expect(String(value).trim(), `${locale}.${key} is empty`).not.toBe('')
+    }
+  })
+
+  it.each(Object.keys(LOCALES))(
+    'translates every coach line the winner rule can pick in %s',
+    (locale) => {
+      // Same gap as the error keys, one layer up: `pickWinner` returns a key, the
+      // route ships it, and nothing type-checks that a sentence exists behind it.
+      // A missing one renders the literal `today.coach.B` as the coaching line —
+      // the single sentence AC-S3 says the student gets.
+      const messages = LOCALES[locale as keyof typeof LOCALES]
+      expect(COACH_LINE_KEYS.length).toBeGreaterThanOrEqual(4)
+      for (const key of COACH_LINE_KEYS) {
+        expect(typeof lookup(messages, key), `${locale} is missing ${key}`).toBe('string')
+      }
+    },
+  )
+
+  it.each(Object.keys(LOCALES))('translates every 7-day progress line in %s', (locale) => {
+    // AC-S8's sentence is a template, and a template with no translation behind
+    // it renders as `me.progress.A` — the one line `/me` exists to show.
+    const messages = LOCALES[locale as keyof typeof LOCALES]
+    expect(PROGRESS_LINE_KEYS.length).toBe(3)
+    for (const key of PROGRESS_LINE_KEYS) {
+      const value = lookup(messages, key)
+      expect(typeof value, `${locale} is missing ${key}`).toBe('string')
+      // Both placeholders are supplied by `weeklyProgress`; a template that
+      // dropped one would silently stop saying how many times.
+      expect(String(value), `${locale}.${key} must interpolate {count}`).toContain('{count}')
+      expect(String(value), `${locale}.${key} must interpolate {days}`).toContain('{days}')
     }
   })
 

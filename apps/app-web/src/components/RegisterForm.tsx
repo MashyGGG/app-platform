@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { postJson } from '@/lib/client-api'
+import { POST_AUTH_LANDING } from '@/lib/routes'
 
 interface Values {
   name?: string
@@ -36,7 +37,7 @@ export function RegisterForm() {
     }
 
     // AC-1 — registration signs the user in, so go straight to Home.
-    router.replace('/home')
+    router.replace(POST_AUTH_LANDING)
     router.refresh()
   }
 

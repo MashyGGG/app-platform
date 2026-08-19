@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { postJson } from '@/lib/client-api'
+import { POST_AUTH_LANDING } from '@/lib/routes'
 
 interface Values {
   email: string
@@ -30,7 +31,7 @@ export function LoginForm() {
       return
     }
 
-    router.replace('/home')
+    router.replace(POST_AUTH_LANDING)
     router.refresh()
   }
 

@@ -2,13 +2,14 @@ import createIntlMiddleware from 'next-intl/middleware'
 import { NextResponse, type NextRequest } from 'next/server'
 import { routing, isAppLocale } from '@/i18n/routing'
 import { SESSION_COOKIE_NAME } from '@/lib/cookies'
+import { POST_AUTH_LANDING } from '@/lib/routes'
 
 const intlMiddleware = createIntlMiddleware(routing)
 
 /** Routes that require a session. */
-const PROTECTED = ['/home']
+const PROTECTED = ['/home', '/today', '/me']
 /** Routes that a signed-in user should not see. */
-const AUTH_ONLY = ['/login', '/register']
+const AUTH_ONLY = ['/login', '/register', '/auth']
 
 /**
  * Cheap FIRST gate only (Edge runtime — no DB access here).
@@ -32,7 +33,7 @@ export default function middleware(request: NextRequest) {
   }
 
   if (hasSessionCookie && AUTH_ONLY.includes(rest)) {
-    return NextResponse.redirect(new URL(`/${locale}/home`, request.url))
+    return NextResponse.redirect(new URL(`/${locale}${POST_AUTH_LANDING}`, request.url))
   }
 
   return intlMiddleware(request)

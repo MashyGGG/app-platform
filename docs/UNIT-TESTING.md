@@ -2,7 +2,7 @@
 
 > Companion to [E2E-TESTING.md](E2E-TESTING.md), which asked "does E2E replace unit tests?" and
 > answered "no, but most of what unit tests are good at is already covered here by something cheaper".
-> This document is the follow-through: **Vitest, 83 tests in 7 files, ~0.9 s**, covering only the
+> This document is the follow-through: **Vitest, 211 tests in 15 files, ~1.5 s**, covering only the
 > places where a unit test earns its keep in this particular codebase.
 >
 > `pnpm test`
@@ -52,13 +52,21 @@ packages/shared/src/
   validation.test.ts            the zod boundary tables
   ip.test.ts                    clientIp header parsing
   errors.test.ts                the API error envelope
+  speaking/
+    content.test.ts             the import validator (AC-I1)
+    otp.test.ts                 code generation, hashing, expiry
+    rotation.test.ts            dayIndex % N + the 7-day no-repeat window (AC-I4)
+    wav.test.ts                 the upload gate's length/format boundaries
+    winner.test.ts              the A > B > C table (AC-S3)
+    progress.test.ts            the 7-day template sentence, 4A/2B/1C (AC-S8)
 packages/db/src/
   schema-url.test.ts            DATABASE_SCHEMA rewriting
 apps/admin-web/src/
   lib/rbac.test.ts              the matrix, the route table, resolveConsoleRoute
   messages/messages.test.ts     every server messageKey is translated, en ≡ zh
 apps/app-web/src/
-  messages/messages.test.ts     same contract, asserted per app
+  messages/messages.test.ts     same contract, plus the coach and progress lines
+  lib/speaking/pcm.test.ts      Float32 capture → 16 kHz PCM
 ```
 
 Tests sit next to the code they cover, so each workspace's existing `tsconfig.json` typechecks them

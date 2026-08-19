@@ -226,6 +226,8 @@ required reviewers there gives you a manual approval step before anything lands.
 - [docs/INDEPENDENT-RELEASES.md](docs/INDEPENDENT-RELEASES.md) — per-app release tags and deploy matrix
 - [docs/E2E-TESTING.md](docs/E2E-TESTING.md) — end-to-end verification: why Playwright, what it covers,
   and whether unit tests are still needed
+- [docs/DAILY-SPEAKING.md](docs/DAILY-SPEAKING.md) — running the daily-speaking product: environment
+  contract, what happens when a free tier runs out, audio retention, and the manual acceptance pass
 
 ### Deviations from the specification
 

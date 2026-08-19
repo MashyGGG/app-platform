@@ -17,7 +17,22 @@
       "submit": "Sign in",
       "noAccount": "No account yet?",
       "register": "Create one",
-      "forgot": "Forgot password?"
+      "forgot": "Forgot password?",
+      "useOtp": "Sign in with an email code"
+    },
+    "otp": {
+      "title": "Email sign-in",
+      "subtitle": "Enter your email and we'll send a 6-digit code — a new address creates an account",
+      "email": "Email",
+      "sendCode": "Send code",
+      "sent": "We sent a code to {email}. It expires in 10 minutes.",
+      "code": "Code",
+      "codeHint": "6 digits — check your spam folder if it hasn't arrived.",
+      "verify": "Sign in",
+      "resend": "Send another code",
+      "resendIn": "Resend in {seconds}s",
+      "changeEmail": "Use another email",
+      "usePassword": "Sign in with a password instead"
     },
     "register": {
       "title": "Create account",
@@ -62,6 +77,62 @@
     "statusActive": "Active",
     "statusDisabled": "Disabled"
   },
+  "today": {
+    "title": "Daily speaking",
+    "promptLabel": "Today's question",
+    "startRecording": "Start recording",
+    "recording": "Recording",
+    "stopRecording": "I'm done",
+    "keepGoing": "Keep going ({seconds}s)",
+    "elapsed": "{seconds}s",
+    "durationHint": "Speak for {min}-{max} seconds: your view, plus a reason and an example.",
+    "scoring": "Listening to your answer...",
+    "simplifiedScoring": "Speech scoring was busy, so this one used the simplified check. The next step still holds, and today still counts.",
+    "nothingRecorded": "No audio was captured. Check your microphone and try again.",
+    "micDenied": "A microphone is needed to practise. Allow access and tap record again.",
+    "winner": {
+      "A": "Let's make it easier to hear",
+      "B": "Say it in your own words",
+      "C": "Finish the thought"
+    },
+    "coach": {
+      "A": "{count, plural, one {One word} other {# words}} came out unclear. Read them once more, then say your answer again.",
+      "B": "You leaned on the same few words the whole way through. Take this line as a model and go again.",
+      "C_reason": "You gave your view but not the reason behind it. Add one sentence and you're done.",
+      "C_example": "You have a view and a reason. One concrete example and you're done.",
+      "C_more": "Clear, with a reason and an example. One more concrete detail and you're done."
+    },
+    "recorderUnavailable": "This browser could not start recording. Try reloading, or use a different browser.",
+    "saving": "Saving your practice...",
+    "warmup": {
+      "title": "Warm up first (optional)",
+      "hint": "Listen once, then read the line out loud. It is not scored.",
+      "start": "Read it aloud",
+      "stop": "That's it",
+      "skip": "Skip the warm-up",
+      "recordingHint": "Read the line above once. A couple of seconds is enough.",
+      "saving": "Saving your warm-up...",
+      "received": "Warm-up done. Ready when you are."
+    },
+    "degraded": {
+      "title": "This is taking longer than usual",
+      "message": "The connection looks slow. You can keep waiting — your answer is still being scored — or finish here. Either way today counts.",
+      "skip": "Finish for today"
+    },
+    "failed": {
+      "hint": "Today's question is still here and today still counts. Record your answer again."
+    },
+    "retry": {
+      "start": "Say it again",
+      "skip": "Skip — I'm done for today",
+      "stop": "Done",
+      "hint": "Take the note above and say it once more. A few seconds is enough."
+    },
+    "done": {
+      "title": "That's today's practice done",
+      "seeWeek": "See how this week has gone"
+    }
+  },
   "errors": {
     "rateLimited": "Too many attempts. Please try again later.",
     "validationFailed": "Some fields are invalid. Please check and retry.",
@@ -71,13 +142,34 @@
     "unauthorized": "Please sign in first.",
     "forbidden": "You do not have permission to do that.",
     "notFound": "Not found.",
-    "invalidToken": "This link is invalid or has expired.",
+    "invalidToken": "That link or code is invalid or has expired.",
     "internal": "Something went wrong. Please try again.",
     "invalidEmail": "Enter a valid email address.",
     "passwordTooShort": "Password must be at least 8 characters.",
     "passwordTooLong": "Password must be at most 128 characters.",
     "passwordTooWeak": "Password must contain both letters and numbers.",
     "passwordMismatch": "The two passwords do not match.",
-    "network": "Network error. Please try again."
+    "invalidOtpCode": "The code is 6 digits.",
+    "network": "Network error. Please try again.",
+    "audioNotWav": "That recording could not be read. Please record again.",
+    "audioWrongFormat": "That recording is in an unsupported format. Please record again.",
+    "audioTooShort": "That was too short. Speak for at least 30 seconds.",
+    "audioTooLong": "That was too long. Keep it under 90 seconds.",
+    "sessionNotScored": "This practice has not been scored yet. Record your answer first."
+  },
+  "me": {
+    "title": "Your week",
+    "calendar": "Last 7 days",
+    "completedDays": "Practised {count} of the last {days} days.",
+    "dayDone": "practised",
+    "dayEmpty": "not practised",
+    "today": "today",
+    "empty": "Practise a few days and a line about your progress will appear here.",
+    "backToToday": "Back to today's question",
+    "progress": {
+      "A": "This week you have mostly been working on being easier to hear ({count} of the last {days} days).",
+      "B": "This week you have mostly been working on saying things in your own words ({count} of the last {days} days).",
+      "C": "This week you have mostly been working on finishing the thought ({count} of the last {days} days)."
+    }
   }
 }
