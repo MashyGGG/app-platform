@@ -1,7 +1,7 @@
 import { API_ERROR } from '@app/shared'
 import { internalError, jsonError, jsonOk } from '@/lib/api'
 import { requireApiUser } from '@/lib/session'
-import { completeSession, findOwnSession, isScored } from '@/lib/speaking/complete'
+import { completeSession, findOwnSession, isCompletable } from '@/lib/speaking/complete'
 import { getWeekView } from '@/lib/speaking/week'
 
 export const runtime = 'nodejs'
@@ -31,7 +31,9 @@ export async function POST(
   const session = await findOwnSession(id, gate.user.id)
   if (!session) return jsonError(API_ERROR.NOT_FOUND)
 
-  if (!isScored(session)) {
+  // A DEGRADED session passes without a winner — that is AC-S10's escape hatch,
+  // and the reason this guard is `isCompletable` rather than `isScored`.
+  if (!isCompletable(session)) {
     return jsonError(API_ERROR.VALIDATION_FAILED, {
       details: { session: ['errors.sessionNotScored'] },
     })

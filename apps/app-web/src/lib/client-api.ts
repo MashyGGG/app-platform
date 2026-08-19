@@ -9,7 +9,15 @@ export type ApiResult<T> = { ok: true; data: T } | { ok: false; failure: ApiFail
 
 /** Every API error already carries an i18n `messageKey` — never render `error`. */
 export async function postJson<T>(url: string, body: unknown): Promise<ApiResult<T>> {
-  return post(url, JSON.stringify(body), 'application/json')
+  return send('POST', url, JSON.stringify(body), 'application/json')
+}
+
+/**
+ * For endpoints that record a fact about an existing resource rather than
+ * advance it — currently only `…/degraded` (AC-S10), which flips one flag.
+ */
+export async function patchJson<T>(url: string, body: unknown): Promise<ApiResult<T>> {
+  return send('PATCH', url, JSON.stringify(body), 'application/json')
 }
 
 /**
@@ -21,13 +29,18 @@ export async function postBinary<T>(
   body: Uint8Array,
   contentType: string,
 ): Promise<ApiResult<T>> {
-  return post(url, body as unknown as BodyInit, contentType)
+  return send('POST', url, body as unknown as BodyInit, contentType)
 }
 
-async function post<T>(url: string, body: BodyInit, contentType: string): Promise<ApiResult<T>> {
+async function send<T>(
+  method: string,
+  url: string,
+  body: BodyInit,
+  contentType: string,
+): Promise<ApiResult<T>> {
   try {
     const response = await fetch(url, {
-      method: 'POST',
+      method,
       headers: { 'content-type': contentType },
       body,
     })

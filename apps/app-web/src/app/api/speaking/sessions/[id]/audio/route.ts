@@ -4,6 +4,7 @@ import { requireApiUser } from '@/lib/session'
 import { findOwnSession } from '@/lib/speaking/complete'
 import { audioLimits } from '@/lib/speaking/config'
 import { markSessionFailed, scoreMainTake } from '@/lib/speaking/score'
+import { applyTestHook, readTestHook } from '@/lib/speaking/test-hook'
 import { toWinnerView } from '@/lib/speaking/today'
 import { readTake } from '@/lib/speaking/upload'
 
@@ -36,7 +37,15 @@ export async function POST(
   const take = await readTake(request, audioLimits())
   if (!take.ok) return take.response
 
+  // Inert unless SPEAKING_TEST_HOOKS=1, and never on a production deployment.
+  const hook = readTestHook(request)
+
   try {
+    // Inside the try, and before the work: `fail` must travel the same path a
+    // real provider error would (AC-S6), and `slow` must stall a request that
+    // still succeeds — the case AC-S10 exists for and AC-S6 does not cover.
+    await applyTestHook(hook)
+
     const result = await scoreMainTake({
       userId: gate.user.id,
       sessionId: session.id,

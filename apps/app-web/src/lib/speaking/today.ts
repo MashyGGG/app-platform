@@ -9,7 +9,7 @@ import {
   type RetryItem,
   type WinnerResult,
 } from '@app/shared/speaking'
-import { audioLimits, retryAudioLimits } from './config'
+import { audioLimits, degradeAfterMs, retryAudioLimits, warmupAudioLimits } from './config'
 import { audioUrl } from './audio-store'
 
 /**
@@ -55,6 +55,15 @@ export interface TodayView {
     maxDurationMs: number
     /** The retry take's own floor — see `retryAudioLimits`. */
     retryMinDurationMs: number
+    /** The warm-up 跟读's own window — see `warmupAudioLimits` (AC-S7). */
+    warmupMinDurationMs: number
+    warmupMaxDurationMs: number
+    /**
+     * AC-S10's line. It reaches the client because the client is what measures
+     * it: the browser owns the only clock that knows how long the student has
+     * been waiting.
+     */
+    degradeAfterMs: number
     sampleRate: number
   }
 }
@@ -139,6 +148,9 @@ function toView(row: SessionRow, dateKey: string): TodayView {
     limits: {
       ...limits,
       retryMinDurationMs: retryAudioLimits().minDurationMs,
+      warmupMinDurationMs: warmupAudioLimits().minDurationMs,
+      warmupMaxDurationMs: warmupAudioLimits().maxDurationMs,
+      degradeAfterMs: degradeAfterMs(),
       sampleRate: 16_000,
     },
   }

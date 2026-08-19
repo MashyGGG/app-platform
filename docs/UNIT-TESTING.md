@@ -2,7 +2,7 @@
 
 > Companion to [E2E-TESTING.md](E2E-TESTING.md), which asked "does E2E replace unit tests?" and
 > answered "no, but most of what unit tests are good at is already covered here by something cheaper".
-> This document is the follow-through: **Vitest, 202 tests in 14 files, ~1.5 s**, covering only the
+> This document is the follow-through: **Vitest, 211 tests in 15 files, ~1.5 s**, covering only the
 > places where a unit test earns its keep in this particular codebase.
 >
 > `pnpm test`

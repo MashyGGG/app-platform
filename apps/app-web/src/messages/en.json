@@ -103,6 +103,24 @@
     },
     "recorderUnavailable": "This browser could not start recording. Try reloading, or use a different browser.",
     "saving": "Saving your practice...",
+    "warmup": {
+      "title": "Warm up first (optional)",
+      "hint": "Listen once, then read the line out loud. It is not scored.",
+      "start": "Read it aloud",
+      "stop": "That's it",
+      "skip": "Skip the warm-up",
+      "recordingHint": "Read the line above once. A couple of seconds is enough.",
+      "saving": "Saving your warm-up...",
+      "received": "Warm-up done. Ready when you are."
+    },
+    "degraded": {
+      "title": "This is taking longer than usual",
+      "message": "The connection looks slow. You can keep waiting — your answer is still being scored — or finish here. Either way today counts.",
+      "skip": "Finish for today"
+    },
+    "failed": {
+      "hint": "Today's question is still here and today still counts. Record your answer again."
+    },
     "retry": {
       "start": "Say it again",
       "skip": "Skip — I'm done for today",

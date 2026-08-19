@@ -1,7 +1,7 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { wavTake } from '../../src/audio'
 import { APP_URL } from '../../src/env'
-import { signInWithOtp } from '../../src/flows'
+import { arriveAtToday, signInWithOtp } from '../../src/flows'
 import { apiContext, expectApiError, jsonOf, tempEmail } from '../../src/http'
 import type { TelemetryEvent } from '../../src/telemetry'
 
@@ -36,20 +36,10 @@ interface ScoreBody {
   retryItems: { kind: string; text: string; audioUrl: string | null }[]
 }
 
-/** Signs a fresh account in through the UI; OTP lands it straight on /today. */
-async function arriveAtToday(page: Page): Promise<void> {
-  await page.goto('/en/auth')
-  await page.getByLabel('Email').fill(tempEmail('today'))
-  await page.getByRole('button', { name: 'Send code' }).click()
-  await expect(page.getByLabel('Code')).toHaveValue(/^\d{6}$/)
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
-  await expect(page).toHaveURL(/\/en\/today$/)
-}
-
 test('AC-S1: the landing page is one question and one record button — no module list', async ({
   page,
 }) => {
-  await arriveAtToday(page)
+  await arriveAtToday(page, 'today')
 
   await expect(page.getByText("Today's question")).toBeVisible()
   await expect(page.getByRole('button', { name: 'Start recording' })).toBeVisible()
@@ -74,7 +64,7 @@ test('AC-S2 / AC-S3: one click starts recording, and the take comes back with ex
     if (message.type() === 'error') consoleErrors.push(message.text())
   })
 
-  await arriveAtToday(page)
+  await arriveAtToday(page, 'today')
 
   // One click: request the microphone AND start capturing. No explainer modal in
   // between — that ladder is what SPEC §4.3 rules out to fit the 10s budget.
@@ -109,7 +99,7 @@ test('AC-S2 / AC-S3: one click starts recording, and the take comes back with ex
 test('AC-S4 / AC-S5: the retry happens in place, and finishing it closes the day', async ({
   page,
 }) => {
-  await arriveAtToday(page)
+  await arriveAtToday(page, 'today')
 
   await page.getByRole('button', { name: 'Start recording' }).click()
   const stop = page.getByRole('button', { name: "I'm done" })
@@ -147,7 +137,7 @@ test('AC-S4 / AC-S5: the retry happens in place, and finishing it closes the day
 })
 
 test('AC-S5: skipping the retry still finishes the day', async ({ page }) => {
-  await arriveAtToday(page)
+  await arriveAtToday(page, 'today')
 
   await page.getByRole('button', { name: 'Start recording' }).click()
   const stop = page.getByRole('button', { name: "I'm done" })

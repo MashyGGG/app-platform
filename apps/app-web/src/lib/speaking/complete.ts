@@ -56,6 +56,22 @@ export function isScored(session: CompletableSession): boolean {
   return session.winnerType !== null
 }
 
+/**
+ * …with one exception, and AC-S10 is it: 「用户可选跳过直接 COMPLETED」.
+ *
+ * A DEGRADED session has no winner precisely because the scoring never came
+ * back, and refusing to close it would strand the student in the one place the
+ * criterion forbids — 「不得让用户处于无提示的无限等待」. The completion row it
+ * writes carries `winner_type: null`, which the weekly template already counts
+ * as a practised-but-unclassified day rather than as an A/B/C.
+ *
+ * Only the SKIP door takes this route. `/retry` still demands a score, because a
+ * retry take is a re-recording OF a next step the student never received.
+ */
+export function isCompletable(session: CompletableSession): boolean {
+  return isScored(session) || session.status === 'DEGRADED'
+}
+
 /** `SpeakingDailyCompletion.date` is a DATE, and `dateKey` is already the day. */
 function dateOf(dateKey: string): Date {
   return new Date(`${dateKey}T00:00:00.000Z`)

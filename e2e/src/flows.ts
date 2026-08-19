@@ -1,5 +1,7 @@
-import { type APIRequestContext } from '@playwright/test'
-import { jsonOf } from './http'
+// `Page` is already taken in this file — it is the paginated-list envelope the
+// admin APIs return — so the browser one comes in under a different name.
+import { expect, type APIRequestContext, type Page as BrowserPage } from '@playwright/test'
+import { jsonOf, tempEmail } from './http'
 
 /**
  * Thin, typed wrappers over the two apps' HTTP contracts. Specs read as
@@ -74,6 +76,25 @@ export async function signInWithOtp(ctx: APIRequestContext, email: string): Prom
     await ctx.post('/api/auth/otp/verify', { data: { email, code: issued.devCode } }),
     200,
   )
+}
+
+/**
+ * The daily-speaking specs' front door: a brand-new account, signed in through
+ * the UI with a one-time code, landing on `/today` (AC-S9).
+ *
+ * Lives here rather than in each spec because three files need it, and because
+ * of the timeout. The verify call signs in through NextAuth on a server the
+ * whole suite is driving in parallel, so under load it can outlast the default
+ * expect timeout — and no spec that calls this is testing this navigation.
+ * A flake here would read as a failure of whatever came after it.
+ */
+export async function arriveAtToday(page: BrowserPage, label: string): Promise<void> {
+  await page.goto('/en/auth')
+  await page.getByLabel('Email').fill(tempEmail(label))
+  await page.getByRole('button', { name: 'Send code' }).click()
+  await expect(page.getByLabel('Code')).toHaveValue(/^\d{6}$/)
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+  await expect(page).toHaveURL(/\/en\/today$/, { timeout: 30_000 })
 }
 
 export async function registerAppUser(

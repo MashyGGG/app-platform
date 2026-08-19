@@ -47,6 +47,59 @@ export function retryAudioLimits(): AudioLimits {
   }
 }
 
+/**
+ * P1 热身 — one sentence read against a reference text (AC-S7), not an answer.
+ *
+ * A different act again, so a different window: the floor only has to be long
+ * enough that an empty take is caught, and the ceiling only long enough for one
+ * sentence said slowly. Holding the warm-up to the main take's 30 s would turn
+ * an optional beat into the longest one in the session.
+ */
+export const DEFAULT_WARMUP_MIN_DURATION_MS = 1_000
+export const DEFAULT_WARMUP_MAX_DURATION_MS = 30_000
+
+export function warmupAudioLimits(): AudioLimits {
+  return {
+    minDurationMs: intFromEnv('SPEAKING_WARMUP_MIN_DURATION_MS', DEFAULT_WARMUP_MIN_DURATION_MS),
+    maxDurationMs: intFromEnv('SPEAKING_WARMUP_MAX_DURATION_MS', DEFAULT_WARMUP_MAX_DURATION_MS),
+  }
+}
+
+/**
+ * AC-S10 — 「超过 20s 但未报错」的降级线.
+ *
+ * Measured on the CLIENT, and deliberately so (IMPL §4.5): the server cannot
+ * know how long the student has been staring at a spinner, and the request is
+ * not cancelled when the line is crossed — it keeps running, and its result is
+ * still rendered if the student is still there. The override exists so the e2e
+ * suite can cross this line in seconds rather than in twenty.
+ */
+export const DEFAULT_DEGRADE_AFTER_MS = 20_000
+
+export function degradeAfterMs(): number {
+  return intFromEnv('SPEAKING_DEGRADE_AFTER_MS', DEFAULT_DEGRADE_AFTER_MS)
+}
+
+/**
+ * The two failure shapes AC-S6 and AC-S10 are about — a 500, and a slow-but-fine
+ * response — cannot be produced by a black-box test any other way: the stub
+ * provider is deterministic and never fails, which is the whole point of it.
+ *
+ * So the suite asks for them explicitly, per request (IMPL §4.2). Off unless
+ * `SPEAKING_TEST_HOOKS=1`, and refused outright on a production deployment —
+ * the same belt-and-braces as `SPEAKING_AUDIO_PLACEHOLDER` and `OTP_DEV_ECHO`.
+ */
+export function testHooksEnabled(): boolean {
+  return process.env.SPEAKING_TEST_HOOKS === '1' && process.env.VERCEL_ENV !== 'production'
+}
+
+/** How long `SPEAKING_TEST_HOOK=slow` stalls — past the 20 s line by default. */
+export const DEFAULT_TEST_HOOK_DELAY_MS = 25_000
+
+export function testHookDelayMs(): number {
+  return intFromEnv('SPEAKING_TEST_HOOK_DELAY_MS', DEFAULT_TEST_HOOK_DELAY_MS)
+}
+
 /** Local directory the dev/e2e AudioStore writes to. Git-ignored. */
 export function audioDir(): string {
   return process.env.SPEAKING_AUDIO_DIR ?? '.data/audio'
