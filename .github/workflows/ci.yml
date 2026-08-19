@@ -305,27 +305,44 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
-      # On a cache hit the browser binary is already unpacked, so `--with-deps`
-      # — `sudo apt-get install` under the hood — is the only work left, and the
-      # only thing here that can still reach the network. It has no lock timeout
-      # and no retry of its own, and it has hung for the better part of an hour
-      # waiting on the dpkg lock the runner's own unattended-upgrades timer
-      # holds. Cap each attempt so a wedge becomes a failure, and retry once:
-      # that lock clears on its own well inside the gap.
+      # No `--with-deps`. That flag shells out to `sudo apt-get`, and apt is the
+      # only thing in this job that has ever failed: the runner's default mirror
+      # (azure.archive.ubuntu.com) stopped answering, apt fell back to the public
+      # archive, and `apt-get update` sat there — fifty minutes on one run, six
+      # on the next.
       #
-      # `timeout` per attempt, not just `timeout-minutes` on the step — a step
-      # timeout kills the step outright, so the retry would never run.
+      # Nor can it simply be bounded. `timeout` signals its direct child, which
+      # here is pnpm; the actual `apt-get` is a root-owned grandchild under sudo
+      # and survives, holding /var/lib/apt/lists/lock. The retry that followed
+      # then died in seven seconds on `Could not get lock ... held by process
+      # 3700 (apt-get)` — its own orphan. Killing apt on a clock converts a hang
+      # into a guaranteed failure, so the answer is not to run it at all.
+      #
+      # The runner image ships Chrome and Edge, so Chromium's shared libraries
+      # are already installed; this only has to unpack the pinned build, which
+      # is cache-backed and took 20s and 69s on the runs before apt broke.
       - name: Install Chromium
-        timeout-minutes: 15
+        run: pnpm --filter @app/e2e exec playwright install chromium
+
+      # Two seconds, and it is what makes dropping `--with-deps` safe to reason
+      # about: if the image ever stops carrying a library Chromium needs, this
+      # fails immediately and names it, instead of surfacing as a browser that
+      # will not start somewhere in the middle of a 67-test suite.
+      - name: Verify Chromium launches
         run: |
-          attempt() {
-            timeout 6m pnpm --filter @app/e2e exec playwright install --with-deps chromium
-          }
-          attempt || {
-            echo "::warning::playwright install stalled or failed — retrying once"
-            sleep 30
-            attempt
-          }
+          pnpm --filter @app/e2e exec node -e "
+            const { chromium } = require('@playwright/test')
+            chromium
+              .launch()
+              .then(async (b) => {
+                console.log('✅ chromium ' + b.version())
+                await b.close()
+              })
+              .catch((e) => {
+                console.error('❌ chromium will not launch: ' + e.message)
+                process.exit(1)
+              })
+          "
 
       # Playwright starts `next start` for both apps, so they must be built first.
       - name: Build
