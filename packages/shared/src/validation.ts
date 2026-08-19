@@ -72,6 +72,19 @@ export const appUserUpdateSchema = z.object({
   locale: localeSchema.optional(),
 })
 
+/**
+ * Admin: overwrite an APP user's password (SPEC §1.7 — super_admin only).
+ *
+ * `passwordSchema` is reused rather than relaxed, for the same reason
+ * `appUserCreateSchema` reuses it: a password an admin sets on someone's behalf
+ * must not be weaker than one they could have chosen themselves.
+ */
+export const appUserPasswordSchema = z.object({
+  userId: z.string().min(1),
+  password: passwordSchema,
+})
+export type AppUserPasswordInput = z.infer<typeof appUserPasswordSchema>
+
 export const setStatusSchema = z.object({
   userId: z.string().min(1),
   status: userStatusSchema,

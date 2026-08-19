@@ -1,6 +1,6 @@
 'use client'
 
-import { EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import { EditOutlined, KeyOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
   App,
   Button,
@@ -16,7 +16,9 @@ import {
 } from 'antd'
 import { useCallback, useEffect, useState } from 'react'
 import { useFormatter, useTranslations } from 'next-intl'
+import type { AdminRoleName } from '@app/shared'
 import { getJson, postJson, type Paged } from '@/lib/client-api'
+import { can } from '@/lib/rbac'
 
 interface AppUser {
   id: string
@@ -39,7 +41,19 @@ interface CreateValues {
   locale?: 'zh' | 'en'
 }
 
-export function AppUsersTable() {
+interface PasswordValues {
+  password: string
+  confirm: string
+}
+
+/**
+ * `role` is the signed-in admin's role, read from the database by the page's
+ * `requireAdmin`. It drives RBAC layer 3 only (UI visibility): hiding the
+ * password action from an operator is a courtesy, and `/api/app-users/password`
+ * re-checks the same permission server-side on every call.
+ */
+export function AppUsersTable({ role }: { role: AdminRoleName }) {
+  const mayResetPassword = can(role, 'appUser.resetPassword')
   const t = useTranslations()
   const format = useFormatter()
   const { message } = App.useApp()
@@ -52,10 +66,14 @@ export function AppUsersTable() {
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState<AppUser | null>(null)
   const [creating, setCreating] = useState(false)
+  const [resetting, setResetting] = useState<AppUser | null>(null)
   const [form] = Form.useForm<EditValues>()
   // A separate instance: sharing one with the edit modal would leak the edited
   // user's values into a subsequent create.
   const [createForm] = Form.useForm<CreateValues>()
+  // Its own instance for the same reason, and so a typed-but-abandoned password
+  // never survives into the next user's modal.
+  const [passwordForm] = Form.useForm<PasswordValues>()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -122,6 +140,22 @@ export function AppUsersTable() {
     message.success(t('appUsers.saved'))
     setEditing(null)
     void load()
+  }
+
+  async function submitPassword(values: PasswordValues) {
+    if (!resetting) return
+    const result = await postJson<{ ok: true }>('/api/app-users/password', {
+      userId: resetting.id,
+      password: values.password,
+    })
+    if (!result.ok) {
+      message.error(t(result.failure.messageKey))
+      return
+    }
+    message.success(t('appUsers.passwordChanged'))
+    setResetting(null)
+    passwordForm.resetFields()
+    // Nothing in the table reflects a password, so there is no reload here.
   }
 
   return (
@@ -197,6 +231,18 @@ export function AppUsersTable() {
                 >
                   {t('appUsers.edit')}
                 </Button>
+                {mayResetPassword && (
+                  <Button
+                    size="small"
+                    icon={<KeyOutlined />}
+                    onClick={() => {
+                      setResetting(row)
+                      passwordForm.resetFields()
+                    }}
+                  >
+                    {t('appUsers.resetPassword')}
+                  </Button>
+                )}
                 <Popconfirm
                   title={
                     row.status === 'active'
@@ -288,6 +334,52 @@ export function AppUsersTable() {
                 { value: 'en', label: t('common.en') },
               ]}
             />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        open={Boolean(resetting)}
+        title={t('appUsers.resetPasswordTitle', { email: resetting?.email ?? '' })}
+        okText={t('common.save')}
+        cancelText={t('common.cancel')}
+        onCancel={() => setResetting(null)}
+        onOk={() => passwordForm.submit()}
+        destroyOnClose
+      >
+        <Form<PasswordValues> form={passwordForm} layout="vertical" onFinish={submitPassword}>
+          {/* Mirrors passwordSchema in @app/shared. The server re-validates —
+              this only saves a round trip. */}
+          <Form.Item
+            name="password"
+            label={t('appUsers.newPassword')}
+            extra={t('appUsers.resetPasswordHint')}
+            rules={[
+              { required: true },
+              { min: 8, message: t('errors.passwordTooShort') },
+              { max: 128, message: t('errors.passwordTooLong') },
+              { pattern: /^(?=.*[a-zA-Z])(?=.*[0-9]).+$/, message: t('errors.passwordTooWeak') },
+            ]}
+          >
+            <Input.Password autoComplete="new-password" />
+          </Form.Item>
+          {/* Client-only: a typo in a password nobody can read back is the one
+              mistake the server cannot catch for us. */}
+          <Form.Item
+            name="confirm"
+            label={t('appUsers.confirmPassword')}
+            dependencies={['password']}
+            rules={[
+              { required: true },
+              ({ getFieldValue }) => ({
+                validator: (_, value) =>
+                  !value || value === getFieldValue('password')
+                    ? Promise.resolve()
+                    : Promise.reject(new Error(t('appUsers.passwordMismatch'))),
+              }),
+            ]}
+          >
+            <Input.Password autoComplete="new-password" />
           </Form.Item>
         </Form>
       </Modal>

@@ -47,6 +47,18 @@ describe('can', () => {
     }
   })
 
+  it('withholds password reset from an operator, alone among appUser.*', () => {
+    // The one asymmetric capability in the `appUser.*` family: an operator runs
+    // the whole APP-user console but cannot mint credentials for someone else's
+    // account. If a future edit widens this to `operator`, the failure should be
+    // here rather than in production.
+    expect(can('operator', 'appUser.resetPassword')).toBe(false)
+    expect(can('super_admin', 'appUser.resetPassword')).toBe(true)
+
+    const appUserOnly = ALL_PERMISSIONS.filter((p) => p.startsWith('appUser.'))
+    expect(appUserOnly.filter((p) => !can('operator', p))).toEqual(['appUser.resetPassword'])
+  })
+
   it('grants nothing to a role that is not in the matrix', () => {
     // Defensive: a JWT minted before a role was renamed still decodes, and the
     // claim reaches `can()` as a plain string.
