@@ -48,6 +48,13 @@ jobs:
     name: Resolve release target
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    # Every job here carries an explicit budget. GitHub's default is 360
+    # minutes, so anything that hangs rather than fails — an apt lock, a stalled
+    # mirror, a webServer that never answers — sits there for six hours holding
+    # the PR open and burning runner time. These numbers are roughly double the
+    # observed run times: generous enough never to cut a healthy build, tight
+    # enough that a wedge shows up as a red X while you are still looking.
+    timeout-minutes: 5
     outputs:
       matrix: ${{ steps.parse.outputs.matrix }}
     steps:
@@ -91,6 +98,7 @@ jobs:
   quality:
     name: Quality (lint / format / typecheck / unit / schema owner)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     # Throwaway PostgreSQL: lets us prove the committed migrations actually
     # apply and match schema.prisma, without ever touching Neon.
     services:
@@ -191,6 +199,10 @@ jobs:
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
+    # The longest job, and the one that has actually wedged: a full run is
+    # ~6-12 minutes, so 30 leaves room for a slow runner without leaving a
+    # hang to run its six hours.
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:16-alpine
@@ -293,8 +305,27 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # On a cache hit the browser binary is already unpacked, so `--with-deps`
+      # — `sudo apt-get install` under the hood — is the only work left, and the
+      # only thing here that can still reach the network. It has no lock timeout
+      # and no retry of its own, and it has hung for the better part of an hour
+      # waiting on the dpkg lock the runner's own unattended-upgrades timer
+      # holds. Cap each attempt so a wedge becomes a failure, and retry once:
+      # that lock clears on its own well inside the gap.
+      #
+      # `timeout` per attempt, not just `timeout-minutes` on the step — a step
+      # timeout kills the step outright, so the retry would never run.
       - name: Install Chromium
-        run: pnpm --filter @app/e2e exec playwright install --with-deps chromium
+        timeout-minutes: 15
+        run: |
+          attempt() {
+            timeout 6m pnpm --filter @app/e2e exec playwright install --with-deps chromium
+          }
+          attempt || {
+            echo "::warning::playwright install stalled or failed — retrying once"
+            sleep 30
+            attempt
+          }
 
       # Playwright starts `next start` for both apps, so they must be built first.
       - name: Build
@@ -333,6 +364,9 @@ jobs:
     needs: [quality, e2e, resolve-release]
     runs-on: ubuntu-latest
     environment: production
+    # Excludes the wait for a required reviewer: the clock starts once the
+    # environment gate opens, not while the approval is pending.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -378,6 +412,7 @@ jobs:
     needs: [migrate, resolve-release]
     runs-on: ubuntu-latest
     environment: production
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
