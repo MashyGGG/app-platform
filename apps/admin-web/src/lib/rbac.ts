@@ -11,6 +11,10 @@ export const PERMISSIONS = {
   'appUser.create': ['super_admin', 'operator'],
   'appUser.update': ['super_admin', 'operator'],
   'appUser.setStatus': ['super_admin', 'operator'],
+  // Overwriting someone's password is credential issuance, not profile
+  // maintenance: it hands whoever performs it the ability to sign in as that
+  // user. Deliberately narrower than the rest of `appUser.*`.
+  'appUser.resetPassword': ['super_admin'],
   'adminUser.view': ['super_admin'],
   'adminUser.create': ['super_admin'],
   'adminUser.updateRole': ['super_admin'],

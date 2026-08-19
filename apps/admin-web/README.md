@@ -42,8 +42,8 @@ business write (`src/lib/audit.ts` returns Prisma create-args for exactly this r
 insert fails, the mutation rolls back with it.
 
 Actions form a closed set shared with the database enum: `APP_USER_CREATE`, `APP_USER_UPDATE`,
-`APP_USER_DISABLE`, `APP_USER_ENABLE`, `ADMIN_USER_CREATE`, `ADMIN_USER_UPDATE_ROLE`,
-`ADMIN_USER_DISABLE`, `ADMIN_USER_ENABLE`. `meta` records `{ fields, before, after }` for updates;
+`APP_USER_DISABLE`, `APP_USER_ENABLE`, `APP_USER_PASSWORD_RESET`, `ADMIN_USER_CREATE`,
+`ADMIN_USER_UPDATE_ROLE`, `ADMIN_USER_DISABLE`, `ADMIN_USER_ENABLE`. `meta` records `{ fields, before, after }` for updates;
 for a create there is no before-state to diff against, so it records what was created instead.
 
 **The audit log is read-only by construction** — `GET /api/audit-logs` exists; no create, update or
@@ -63,6 +63,21 @@ registration — a console-created account is never weaker than one a user made 
 emailed (password reset is switched off), so the password has to be handed over out of band.
 `emailVerified` stays null, matching app-web's registration: an admin typing an address is not proof
 that it was verified.
+
+### Changing an APP user's password
+
+`appUser.resetPassword` is **super_admin only** — the one capability in the `appUser.*` family an
+operator does not hold. Overwriting a password is credential issuance, not profile maintenance: it
+hands whoever performs it working credentials for that account.
+
+`POST /api/app-users/password` validates against the same `passwordSchema`, refuses any target that
+has an `AdminProfile` (a backoffice password is changed through the admin-user routes, which carry
+their own guard rails), and writes `APP_USER_PASSWORD_RESET`. The audit `meta` records only that a
+reset happened — the log is append-only and readable by every operator, so a password written there
+could never be taken back out.
+
+It does **not** end the target's existing app-web session: the session strategy is JWT, so an
+unexpired cookie stays valid until it expires. Disabling the account is the immediate kill switch.
 
 ## Guard rails on privileged mutations
 

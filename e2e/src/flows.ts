@@ -145,6 +145,18 @@ export async function setAppUserStatus(
   )
 }
 
+/** super_admin only — an operator gets a 403 from this route. */
+export async function resetAppUserPassword(
+  admin: APIRequestContext,
+  userId: string,
+  password: string,
+): Promise<{ ok: true }> {
+  return jsonOf<{ ok: true }>(
+    await admin.post('/api/app-users/password', { data: { userId, password } }),
+    200,
+  )
+}
+
 // --- admin-web: backoffice users --------------------------------------------
 
 export async function listAdminUsers(
