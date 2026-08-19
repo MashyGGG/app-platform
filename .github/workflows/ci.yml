@@ -8,7 +8,12 @@
 #
 #   app-web/vX.Y.Z      → deploy app-web only
 #   admin-web/vX.Y.Z    → deploy admin-web only
-#   vX.Y.Z              → deploy both (shared / DB changes)
+#   blog-web/vX.Y.Z     → deploy blog-web only (no migration — it owns no data)
+#   vX.Y.Z              → deploy app-web + admin-web (shared / DB changes)
+#
+# `vX.Y.Z` deliberately does NOT include blog-web: that tag means "the two apps
+# that share the database", and blog-web shares neither the database nor a
+# release cadence with them. Its content lives in files, so it ships on its own.
 #
 # Pushing to `main` deliberately triggers NOTHING. Vercel's Git integration must
 # stay disabled (see apps/*/vercel.json) or it would deploy on push behind this
@@ -57,6 +62,9 @@ jobs:
     timeout-minutes: 5
     outputs:
       matrix: ${{ steps.parse.outputs.matrix }}
+      # 'false' for a blog-web-only release: it reads no database, so there is
+      # nothing to migrate and no reason to open the production environment.
+      needs_migrate: ${{ steps.parse.outputs.needs_migrate }}
     steps:
       - name: Parse tag → deploy matrix
         id: parse
@@ -66,6 +74,8 @@ jobs:
           set -euo pipefail
           app_web='{"app":"app-web","project_id_secret":"VERCEL_PROJECT_ID_APP_WEB"}'
           admin_web='{"app":"admin-web","project_id_secret":"VERCEL_PROJECT_ID_ADMIN_WEB"}'
+          blog_web='{"app":"blog-web","project_id_secret":"VERCEL_PROJECT_ID_BLOG_WEB"}'
+          needs_migrate=true
 
           if [[ "$TAG" =~ ^app-web/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             matrix="[$app_web]"
@@ -73,14 +83,20 @@ jobs:
           elif [[ "$TAG" =~ ^admin-web/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             matrix="[$admin_web]"
             target=admin-web
+          elif [[ "$TAG" =~ ^blog-web/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            matrix="[$blog_web]"
+            target=blog-web
+            needs_migrate=false
           elif [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             matrix="[$app_web,$admin_web]"
             target=both
           else
             echo "❌ Unsupported release tag: $TAG"
-            echo "Expected: app-web/vX.Y.Z | admin-web/vX.Y.Z | vX.Y.Z"
+            echo "Expected: app-web/vX.Y.Z | admin-web/vX.Y.Z | blog-web/vX.Y.Z | vX.Y.Z"
             exit 1
           fi
+
+          echo "needs_migrate=$needs_migrate" >> "$GITHUB_OUTPUT"
 
           {
             echo "matrix<<EOF"
@@ -376,7 +392,9 @@ jobs:
   # ---------------------------------------------------------------------------
   migrate:
     name: Prisma migrate deploy (packages/db)
-    if: github.event_name == 'release'
+    # Skipped entirely for a blog-web-only release — that app reads no database,
+    # so there is no reason to open the production environment for it.
+    if: github.event_name == 'release' && needs.resolve-release.outputs.needs_migrate == 'true'
     # resolve-release must succeed first so a bad tag never touches production DB.
     needs: [quality, e2e, resolve-release]
     runs-on: ubuntu-latest
@@ -425,8 +443,16 @@ jobs:
   # ---------------------------------------------------------------------------
   deploy:
     name: Deploy ${{ matrix.app }} (production)
-    if: github.event_name == 'release'
-    needs: [migrate, resolve-release]
+    # `always()` is what lets a blog-web release deploy while `migrate` is
+    # SKIPPED — a skipped dependency would otherwise skip this job too. The
+    # explicit result checks put the gate back: a failed or cancelled migration
+    # still stops the deploy, exactly as before.
+    if: |
+      always() && github.event_name == 'release' &&
+      needs.resolve-release.result == 'success' &&
+      needs.quality.result == 'success' && needs.e2e.result == 'success' &&
+      needs.migrate.result != 'failure' && needs.migrate.result != 'cancelled'
+    needs: [migrate, resolve-release, quality, e2e]
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 20
