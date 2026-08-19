@@ -87,6 +87,7 @@
     "elapsed": "{seconds} 秒",
     "durationHint": "说 {min}-{max} 秒：说出你的看法，再给一个理由和一个例子。",
     "scoring": "正在听你说的…",
+    "simplifiedScoring": "语音评分暂时忙不过来，这次用的是简化评分。下一步照做即可，今天照常算练过。",
     "nothingRecorded": "没有采到声音。检查一下麦克风再试一次。",
     "micDenied": "需要麦克风才能练。允许后再点一下录音。",
     "winner": {

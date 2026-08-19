@@ -15,6 +15,7 @@
     "migrate:deploy": "prisma migrate deploy",
     "seed": "tsx prisma/seed.ts",
     "speaking:import": "tsx prisma/speaking-import.ts",
+    "speaking:prune": "tsx prisma/speaking-prune.ts",
     "studio": "prisma studio",
     "typecheck": "tsc --noEmit"
   },

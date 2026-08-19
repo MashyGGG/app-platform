@@ -87,6 +87,7 @@
     "elapsed": "{seconds}s",
     "durationHint": "Speak for {min}-{max} seconds: your view, plus a reason and an example.",
     "scoring": "Listening to your answer...",
+    "simplifiedScoring": "Speech scoring was busy, so this one used the simplified check. The next step still holds, and today still counts.",
     "nothingRecorded": "No audio was captured. Check your microphone and try again.",
     "micDenied": "A microphone is needed to practise. Allow access and tap record again.",
     "winner": {

@@ -17,6 +17,13 @@ export interface ScoreResult {
   winner: WinnerResult
   transcript: string
   durationMs: number
+  /**
+   * True when the rule layer answered because the speech vendor could not —
+   * a 429 storm, or the month's free quota spent (IMPL §4.4 / §7). The day is
+   * NOT failed: the student still has one next step, and SPEC §4.3's 「明确提示」
+   * is why this travels all the way out to the client.
+   */
+  degraded: boolean
 }
 
 export async function scoreMainTake(input: {
@@ -41,7 +48,7 @@ export async function scoreMainTake(input: {
   const material = await loadPromptMaterial(input.promptId)
   const provider = getSpeechProvider()
 
-  const { text, words } = await provider.transcribe(input.audio, {
+  const { text, words, degraded } = await provider.transcribe(input.audio, {
     vocabulary: material.words.map((word) => word.lemma),
   })
 
@@ -63,6 +70,12 @@ export async function scoreMainTake(input: {
       // RETRY, not COMPLETED: the day closes when the student re-records or
       // explicitly skips (AC-S5), which is M3's half of the loop.
       status: 'RETRY',
+      // Set here rather than through `markSessionDegraded`, and only the flag:
+      // the STATUS must stay RETRY. A quota fallback still produced a winner, so
+      // the student is not stranded — which is the one thing DEGRADED-the-status
+      // means. Same column, two causes, and `degradedFlag` answers the question
+      // both of them raise: how often was this day not scored properly?
+      ...(degraded ? { degradedFlag: true } : {}),
       transcript: text,
       winnerType: winner.winnerType,
       winnerPayload: {
@@ -73,7 +86,12 @@ export async function scoreMainTake(input: {
     },
   })
 
-  return { winner, transcript: text, durationMs: input.durationMs }
+  return {
+    winner,
+    transcript: text,
+    durationMs: input.durationMs,
+    degraded: degraded !== undefined,
+  }
 }
 
 /**

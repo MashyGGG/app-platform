@@ -18,7 +18,7 @@ import { WeekStrip } from './WeekStrip'
 import { useRecorder } from './useRecorder'
 // Types only — `lib/speaking/*.ts` is `server-only`, and `import type` is erased
 // before the bundler ever sees it.
-import type { RetryItemView, TodayView, WinnerView } from '@/lib/speaking/today'
+import type { RetryItemView, ScoredView, TodayView, WinnerView } from '@/lib/speaking/today'
 import type { WeekView } from '@/lib/speaking/week'
 
 /**
@@ -89,6 +89,13 @@ export function TodaySession({
   const [scoringFailed, setScoringFailed] = useState(false)
   /** AC-S10 — the 20s line was crossed and the request has not come back. */
   const [degraded, setDegraded] = useState(false)
+  /**
+   * The speech vendor was unreachable or out of free quota and the rule layer
+   * answered instead (IMPL §4.4). Told, not hidden — but told beside the next
+   * step rather than instead of it: the student still has exactly one thing to
+   * do, and AC-S3's 「恰好一个」 is about the correction, not the page.
+   */
+  const [simplified, setSimplified] = useState(false)
 
   /**
    * Set when the student ends the day from the degraded prompt while the scoring
@@ -185,7 +192,7 @@ export function TodaySession({
       )
     }, degradeAfterMs)
 
-    const result = await postBinary<WinnerView>(
+    const result = await postBinary<ScoredView>(
       `/api/speaking/sessions/${initial.session.id}/audio`,
       take,
       'audio/wav',
@@ -206,6 +213,7 @@ export function TodaySession({
       return
     }
 
+    setSimplified(result.data.simplifiedScoring)
     setWinner(result.data)
     setPhase('result')
   }, [degradeAfterMs, initial.session.id, recorder])
@@ -441,6 +449,7 @@ export function TodaySession({
 
       {phase === 'result' && winner ? (
         <WinnerCard
+          simplified={simplified}
           winner={winner}
           onRetry={() => void beginRecording('retry')}
           onSkip={() => void skipRetry()}
@@ -535,11 +544,13 @@ function WarmupCard({
  */
 function WinnerCard({
   winner,
+  simplified,
   onRetry,
   onSkip,
   starting,
 }: {
   winner: WinnerView
+  simplified: boolean
   onRetry: () => void
   onSkip: () => void
   starting: boolean
@@ -557,6 +568,16 @@ function WinnerCard({
         </Space>
       }
     >
+      {simplified ? (
+        <Alert
+          type="info"
+          showIcon
+          className="mb-4"
+          data-testid="simplified-scoring"
+          message={t('today.simplifiedScoring')}
+        />
+      ) : null}
+
       <Paragraph>
         {winner.coachLineKey ? t(winner.coachLineKey, winner.coachLineParams) : null}
       </Paragraph>

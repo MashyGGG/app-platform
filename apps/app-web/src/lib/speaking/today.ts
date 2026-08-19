@@ -262,6 +262,16 @@ export type WinnerView = Pick<
   'winnerType' | 'coachLineKey' | 'coachLineParams' | 'retryItems'
 >
 
+/**
+ * What POST …/audio answers with: the winner, plus whether the rule layer had
+ * to stand in for the speech vendor (IMPL §4.4 「明确提示」). Only the live
+ * response carries the flag — a day resumed from the database renders its
+ * winner without it, because by then the notice has nothing to warn about.
+ */
+export interface ScoredView extends WinnerView {
+  simplifiedScoring: boolean
+}
+
 /** The client-facing half of a scoring result — keys in, URLs out. */
 export function toWinnerView(result: WinnerResult): WinnerView {
   return {

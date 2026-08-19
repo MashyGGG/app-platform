@@ -100,6 +100,58 @@ export function testHookDelayMs(): number {
   return intFromEnv('SPEAKING_TEST_HOOK_DELAY_MS', DEFAULT_TEST_HOOK_DELAY_MS)
 }
 
+/**
+ * Speech vendor selection (IMPL §4.2 / 决策 Q4).
+ *
+ * `stub` stays the default and stays supported: it is what CI, e2e and
+ * pre-commit run on, and — per IMPL §4.4 — it is also the fallback the resilient
+ * wrapper degrades to when the Azure F0 free tier is spent.
+ */
+export type SpeechProviderName = 'stub' | 'azure'
+
+export function speechProviderName(): SpeechProviderName {
+  const name = process.env.SPEECH_PROVIDER ?? 'stub'
+  if (name !== 'stub' && name !== 'azure') {
+    // Fail loud rather than silently scoring production with the stub.
+    throw new Error(`unknown SPEECH_PROVIDER "${name}" (expected "stub" or "azure")`)
+  }
+  return name
+}
+
+export interface AzureEnv {
+  key: string
+  region: string
+  language: string
+}
+
+/** Null when the deployment has no credentials — which is most of them. */
+export function azureSpeechEnv(): AzureEnv | null {
+  const key = process.env.AZURE_SPEECH_KEY
+  const region = process.env.AZURE_SPEECH_REGION
+  if (!key || !region) return null
+  return { key, region, language: process.env.AZURE_SPEECH_LANGUAGE ?? 'en-US' }
+}
+
+/**
+ * How many speech requests may be in flight at once.
+ *
+ * One, because that is what Azure's F0 tier allows (IMPL §4.4 红线 2) — the
+ * second concurrent request comes back 429. This is a ceiling to raise WITH the
+ * tier, never ahead of it: exceeding it does not go faster, it goes 429.
+ */
+export const DEFAULT_SPEECH_CONCURRENCY = 1
+
+export function speechConcurrency(): number {
+  return intFromEnv('SPEECH_CONCURRENCY', DEFAULT_SPEECH_CONCURRENCY)
+}
+
+/** Vercel Blob Hobby is 1 GB — the number retention pressure is measured against. */
+export const DEFAULT_BLOB_CAPACITY_BYTES = 1024 * 1024 * 1024
+
+export function blobCapacityBytes(): number {
+  return intFromEnv('SPEAKING_BLOB_CAPACITY_BYTES', DEFAULT_BLOB_CAPACITY_BYTES)
+}
+
 /** Local directory the dev/e2e AudioStore writes to. Git-ignored. */
 export function audioDir(): string {
   return process.env.SPEAKING_AUDIO_DIR ?? '.data/audio'

@@ -56,7 +56,14 @@ export async function POST(
 
     // Exactly one winner, and the material to act on it — nothing else. A second
     // correction on screen is the failure mode AC-S3 exists to prevent (D16).
-    return jsonOk({ sessionId: session.id, status: 'RETRY', ...toWinnerView(result.winner) })
+    return jsonOk({
+      sessionId: session.id,
+      status: 'RETRY',
+      ...toWinnerView(result.winner),
+      // Not an error field: the day scored, it just scored on rules alone
+      // because the vendor was throttled or out of free quota (IMPL §7).
+      simplifiedScoring: result.degraded,
+    })
   } catch (error) {
     // AC-S6: the day's prompt and the day's allowance both survive a failure.
     await markSessionFailed(session.id).catch(() => undefined)

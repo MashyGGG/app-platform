@@ -8,7 +8,9 @@
  * all, and — per IMPL §4.4 — it doubles as the fallback running mode when the
  * Azure F0 free quota (5 audio hours/month) is spent.
  *
- * The real implementation lands in M5 behind this same interface.
+ * `azure-speech.ts` is the real implementation behind this same interface, and
+ * `speech-resilience.ts` is what puts the two together: queue → backoff →
+ * fall back to the stub rather than fail (IMPL §7).
  */
 
 export interface AsrWord {
@@ -17,9 +19,41 @@ export interface AsrWord {
   confidence: number
 }
 
+/**
+ * Why a take could not be scored by the primary provider. Lives here rather
+ * than next to the retry logic because it travels back out on the RESULT — see
+ * `SpeechDegradation` — and `speech-resilience.ts` imports this file, not the
+ * other way round.
+ *
+ * - `throttled`  — Azure F0 允许并发 1，第二个人同时提交就是 429. Retryable.
+ * - `quota`      — the month's 5 audio hours are spent (IMPL §4.4 红线 2). Not
+ *                  retryable, and not an error either: the product keeps
+ *                  running on rules alone.
+ * - `transient`  — 5xx, a dropped socket, a timeout. Retryable.
+ * - `permanent`  — a bad key, a bad region, a malformed request. Retrying makes
+ *                  it worse and falling back would hide a misconfiguration
+ *                  behind plausible-looking scores, so this one is rethrown.
+ */
+export type SpeechFailureKind = 'throttled' | 'quota' | 'transient' | 'permanent'
+
+/**
+ * Present when the FALLBACK provider answered because the primary could not.
+ *
+ * IMPL §4.4: 「接近阈值先降级……不报错」. The student still gets their one next
+ * step; what changes is that it came from the rule layer, which is worth both
+ * telling them (SPEC §4.3 「明确提示」) and recording on the session, so a month
+ * of `degradedFlag` says how often the free tier ran out.
+ */
+export interface SpeechDegradation {
+  /** The provider that actually answered — `stub`, today. */
+  provider: string
+  reason: SpeechFailureKind
+}
+
 export interface TranscribeResult {
   text: string
   words: AsrWord[]
+  degraded?: SpeechDegradation
 }
 
 export interface PhonemeScore {
@@ -36,6 +70,7 @@ export interface AssessedWord {
 export interface AssessResult {
   accuracy: number
   words: AssessedWord[]
+  degraded?: SpeechDegradation
 }
 
 export interface SpeechContext {
